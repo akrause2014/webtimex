@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Timex</title>
+
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" href="jquery.mobile-1.4.5/jquery.mobile-1.4.5.min.css" />
+    <link rel="stylesheet" href="js/jquery.mobile.datepicker.css"/>
+    <script src="http://code.jquery.com/jquery-1.11.2.js"></script>
+    <script src="jquery.mobile-1.4.5/jquery.mobile-1.4.5.min.js"></script>
+    <script src="js/jquery.ui.datepicker.js"></script>
+    <script id="mobile-datepicker" src="js/jquery.mobile.datepicker.js"></script>
+    
+<script type='text/javascript'>//<![CDATA[ 
+
+var activeProject = null;
+var projects = {};
+var db;
+
+var editedProjects = {}
+var editedDate = null;
+
+function pretty_time_string(num) 
+{
+    return ( num < 10 ? "0" : "" ) + num;
+}
+
+function formatDate(date)
+{
+    return date.getFullYear() + '-' + pretty_time_string(date.getMonth()+1) + '-' + pretty_time_string(date.getDate())
+}
+
+function durationToSeconds(s)
+{
+    var parts = s.split(":");
+    var hours = parseInt(parts[0]);
+    var minutes = parseInt(parts[1]);
+    var seconds = 0;
+    if (parts.length >= 3)
+        seconds = parseInt(parts[2]);
+    totalSeconds = hours*3600 + minutes*60 + seconds;
+    return totalSeconds;
+}
+
+function secondsToDuration(total_seconds, showSeconds)
+{
+    if (showSeconds == undefined)
+    {
+        showSeconds = true;
+    }
+    
+    var hours = Math.floor(total_seconds / 3600);
+    total_seconds = total_seconds % 3600;
+
+    var minutes = Math.floor(total_seconds / 60);
+    total_seconds = total_seconds % 60;
+
+    var seconds = Math.floor(total_seconds);
+
+    hours = pretty_time_string(hours);
+    minutes = pretty_time_string(minutes);
+    seconds = pretty_time_string(seconds);
+
+    var currentTimeString = hours + ":" + minutes;
+    if (showSeconds) currentTimeString += ":" + seconds;
+    return currentTimeString;
+}
+
+function readProjects()
+{
+    today = new Date
+    date = formatDate(today)
+    
+    console.log('Loading projects for date ' + date)
+    // document.querySelector("#listview").innerHTML = s;
+    $('#listview').empty().append(createProjectListHeader());
+    try {
+        $('#listview').listview('refresh');
+        $('#stopTrackerButton').button('disable');
+    } catch (ex) {}
+    projects = {}
+
+    var lastDateRecord = null;
+    var transaction = db.transaction(["timex"], "readonly");
+    var store = transaction.objectStore("timex");
+    var index = store.index("date");
+    var request = index.openCursor(null, 'prev'); 
+    request.onsuccess = function (event) {
+        if (event.target.result) {
+            lastDateRecord = event.target.result.value; //the object with max revision
+        }
+    };
+    transaction.oncomplete = function (event) 
+    {
+        if (lastDateRecord == null)
+        {
+            // no projects
+            console.log('No projects found.')
+            return;
+        }
+        lastDate = lastDateRecord['date']
+        console.log('Last date record was ' + lastDate)
+        projects = lastDateRecord['projects'];
+        if (date != lastDate)
+        {
+            // set all durations to zero if it's a new day
+            for (var projectName in projects)
+            {
+                projects[projectName]['duration'] = 0
+            }
+            activeProject = null;
+            storeTimex(new Date)
+        }
+        for (var projectName in projects)
+        {
+            console.log('Setting ' + projectName + " with duration " + secondsToDuration(projects[projectName]['duration']))
+            $('#listview').append(createProjectListItem(projectName, projects[projectName]['duration']));
+            if(typeof $('#listview').listview() !== "undefined")
+                $('#listview').listview('refresh');
+        }
+        if (date == lastDate)
+        {
+            var startTime = lastDateRecord['startTime'];
+            var actProj = lastDateRecord['activeProject'];
+            if (startTime != undefined && actProj != undefined)
+            {
+                activeProject = actProj;
+                console.log("Active project is " + actProj + " with start time: " + startTime);
+                projects[activeProject]['startTime'] = startTime;
+                var total_seconds = (new Date - startTime) / 1000;
+                currentTimeString = secondsToDuration(total_seconds + projects[activeProject]['duration']);
+                $('#' + activeProject + '-duration').text(currentTimeString);
+                if(typeof $('#stopTrackerButton').button() !== "undefined")
+                    $('#stopTrackerButton').button('enable');
+            }
+        }
+    };
+}
+
+function createDatePicker(dpname)
+{
+    $(dpname).datepicker("option", "dateFormat", "yy/mm/dd")
+    $(dpname).datepicker("option", "firstDay", 1)
+    $(dpname).datepicker("option", "defaultDate", new Date())
+    $(dpname).datepicker("setDate", new Date())
+    $(dpname).datepicker("option", "showButtonPanel", true)
+}
+
+function createProjectListItem(projectName, durationInSeconds, showSeconds)
+{
+    duration = secondsToDuration(durationInSeconds, showSeconds);
+    msg =  "<li data-name=\"" + projectName + "\">"
+    msg += "<a href=\"#\"><div class=\"ui-grid-a\">"
+    msg += "<div class=\"ui-block-a\" style=\"width:60%\">"
+    msg += "<div class=\"ui-bar\">" + projectName + "</div>"
+    msg += "</div>"
+    msg += "<div class=\"ui-block-b\" style=\"width:40%\">"
+    msg += "<div id=\"" + projectName + "-duration\" class=\"ui-bar\">" + duration + "</div>"
+    msg += "</div></div></a></li>"
+    return msg
+} 
+
+function createProjectListHeader()
+{    
+    var s = "<li class=\"ui-li-static ui-body-inherit ui-first-child\">"
+            + "<div class=\"ui-grid-a\">"
+            + "<div class=\"ui-block-a\" style=\"width:60%\">"
+            + "<div class=\"ui-bar\"><h3>Project</h3></div>"
+            + "</div>"
+            + "<div class=\"ui-block-b\" style=\"width:40%\">"
+            + "<div class=\"ui-bar\"><h3>Time</h3></div>"
+            + "</div></div></li>";
+    return s;
+}
+
+</script>
+<body>
+
+<script>
+
+function indexedDBOk() {
+    return "indexedDB" in window;
+}
+
+function editReset(msg)
+{
+    $('#editListView').empty().append("<li data-role=\"list-divider\"><h2>" + msg + "<h2></li>");
+    $('#editListView').listview('refresh');
+    // $('#editDate').datepicker('setDate', '');
+    $('#editAddProjectText').val('');
+    $('#editSaveButton').button('disable');
+    $('#editSaveButton').button('refresh');    
+    $('#editAddProjectButton').button('disable');
+    $('#editAddProjectButton').button('refresh');    
+    $('#editAddProjectText').textinput('disable');
+    $('#editAddProjectText').textinput('refresh');    
+}
+
+function editAddRow(projectName, durationInSeconds)
+{
+    var duration = secondsToDuration(durationInSeconds, false);
+    msg =  "<li>"
+    msg += "<div class=\"ui-grid-a\">"
+    msg += "<div class=\"ui-block-a\" style=\"width:60%\">"
+    msg += "<div class=\"ui-bar\">"
+    msg += "<div class=\"ui-input-text ui-body-inherit ui-corner-all ui-shadow-inset\">"
+    msg += "<input type=\"text\" value=\"" + projectName + "\" id=\"editProjectName-" + projectName + "\">"
+    msg += "</div>"
+    msg += "</div></div>"
+    msg += "<div class=\"ui-block-b\" style=\"width:40%\">"
+    msg += "<div class=\"ui-bar\">"
+    msg += "<div class=\"ui-input-text ui-body-inherit ui-corner-all ui-shadow-inset\">"
+    msg += "<input type=\"text\" value=\"" + duration + "\" id=\"editProjectDuration-" + projectName + "\">"
+    msg += "</div></div></div></div></li>"
+    return msg;
+}
+
+function loadEditDate()
+{   
+    var date = $('#editDate').val()
+    // d = dateText.split('/');
+    // var date = d[2] + '-' + d[0] + '-' + d[1];
+    // $('#editDate').val(date);
+    editedDate = date;
+    console.log("Selected date: " + date);
+    editedProjects = {}
+    var indexTransaction = db.transaction(["timex"], "readonly");
+    var store = indexTransaction.objectStore("timex");
+    var index = store.index("date");
+    var range = IDBKeyRange.only(date);
+    $('#editAddProjectButton').button('enable');
+    $('#editSaveButton').button('enable');
+    $('#editSaveButton').button('refresh');    
+    $('#editAddProjectText').textinput('enable');
+    $('#editListView').empty().append(createProjectListHeader());
+    $('#editListView').listview('refresh');
+    index.openCursor(range).onsuccess = function(evt) {
+        var cursor = evt.target.result;
+        if (cursor) {
+            editedProjects = cursor.value['projects'];
+            for (var projectName in editedProjects)
+            {
+                var duration = secondsToDuration(editedProjects[projectName]['duration'], false);
+                msg =  "<li>"
+                msg += "<div class=\"ui-grid-a\">"
+                msg += "<div class=\"ui-block-a\" style=\"width:60%\">"
+                msg += "<div class=\"ui-bar\">"
+                msg += "<div class=\"ui-input-text ui-body-inherit ui-corner-all ui-shadow-inset\">"
+                msg += "<input type=\"text\" value=\"" + projectName + "\" id=\"editProjectName-" + projectName + "\">"
+                msg += "</div>"
+                msg += "</div></div>"
+                msg += "<div class=\"ui-block-b\" style=\"width:40%\">"
+                msg += "<div class=\"ui-bar\">"
+                msg += "<div class=\"ui-input-text ui-body-inherit ui-corner-all ui-shadow-inset\">"
+                msg += "<input type=\"text\" value=\"" + duration + "\" id=\"editProjectDuration-" + projectName + "\">"
+                msg += "</div></div></div></div></li>"
+                $('#editListView').append(msg)
+                $('#editListView').listview('refresh');
+            }
+            cursor.continue();
+        }
+    };  
+}
+  
+$(document).bind('pagecreate', '#editProjects', function(evt) 
+{
+    // set edit template to today
+    $('#editDate').val(formatDate(new Date));
+    
+    $(document).off('click', '#editSaveButton').on('click', '#editSaveButton', function(){
+        console.log('Store new record for ' + editedDate)
+        if (editedDate)
+        {
+            var msg = '';
+            for (projectName in editedProjects)
+            {
+                var durationStr = $("#editProjectDuration-" + projectName).val()
+                var duration = durationToSeconds(durationStr);
+                if (isNaN(duration))
+                {
+                    alert('Could not parse ' + durationStr + ' for project ' + projectName
+                                    + '.\nPlease use the format "hh:mm".');
+                    return;
+                }
+                editedProjects[projectName]['duration'] = duration;
+            }
+            storeEditedTimex(editedDate, editedProjects)
+            editedProjects = {}
+            editedDate = null;
+        }
+    });    
+    $(document).off('click', '#editCancelButton').on('click', '#editCancelButton', function(){
+        console.log('Cancelling edit.')
+        editReset('Cancelled.');
+    });
+    $(document).off('click', '#editAddProjectButton').on('click', '#editAddProjectButton', function(e) {
+        var projectName = $('#editAddProjectText').val();
+        if (!projectName)
+        {
+            alert("Please enter a project name.");
+            return;
+        }
+        if (projectName in editedProjects)
+        {
+            alert('Project "' + projectName + '" already exists.');
+            return;
+        }
+        newproject = {}
+        newproject['name'] = projectName
+        newproject['duration'] = 0
+        editedProjects[projectName] = newproject
+        msg = editAddRow(projectName, 0);
+        $('#editListView').append(msg)
+        $('#editListView').listview('refresh');
+        $('#editAddProjectText').val('');
+    });    
+    // $("#editDate").datepicker({
+    //   onSelect:
+    $(document).off('click', '#editLoadPrevDateButton').on('click', '#editLoadPrevDateButton', function(){
+        console.log('load previous date')
+        if (!$('#editDate').val()) return;
+        var date = new Date($('#editDate').val())
+        if (date.toString() === "Invalid Date") return;
+        date.setDate(date.getDate()-1);
+        $('#editDate').val(formatDate(date));
+        loadEditDate();
+    });
+    $(document).off('click', '#editLoadNextDateButton').on('click', '#editLoadNextDateButton', function(){
+        if (!$('#editDate').val()) return;
+        var date = new Date($('#editDate').val())
+        if (date.toString() === "Invalid Date") return;
+        date.setDate(date.getDate()+1);
+        console.log(date)
+        $('#editDate').val(formatDate(date));
+        loadEditDate();
+    });
+    $(document).off('click', '#editLoadButton').on('click', '#editLoadButton', function(){
+        loadEditDate();
+    });
+});
+
+$(document).bind('pagecreate', '#tracker', function(evt) 
+{
+    var today = new Date   
+    var weekDays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]; 
+    var monthNames = [ "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" ];
+    $('#tracker_date').text(today.getDate() + ' ' + monthNames[today.getMonth()] + ' ' + today.getFullYear())
+    
+    //No support? Go in the corner and pout.
+    if(!indexedDBOk) return;
+ 
+    var openRequest = indexedDB.open("timex_db", 4);
+ 
+    openRequest.onupgradeneeded = function(e) 
+    {
+        var thisDB = e.target.result;
+        
+        if(thisDB.objectStoreNames.contains("projects")) {
+            thisDB.deleteObjectStore("projects");
+        }
+        // if(thisDB.objectStoreNames.contains("timex")) {
+        //     thisDB.deleteObjectStore("timex");
+        // }
+ 
+        if(!thisDB.objectStoreNames.contains("timex")) {
+            var objectStore = thisDB.createObjectStore("timex", {keyPath: "date"});
+            objectStore.createIndex("date","date", {unique:true});
+        }
+    }
+ 
+    openRequest.onsuccess = function(e) {
+        console.log("running onsuccess");
+ 
+        db = e.target.result;
+        
+        // populate listview
+        readProjects();
+    }
+ 
+    openRequest.onerror = function(e) {
+        //Do something for the error
+    }
+    
+    $(document).off('click', '#listview li').on('click', '#listview li', function(){
+    // $('#listview').on('click', 'li', function() {
+        prev = activeProject;
+        if (prev != null)
+        {
+            var duration = $('#' + prev + '-duration').text();
+            projects[prev]['duration'] = durationToSeconds(duration);
+            delete projects[prev]['startTime'];
+            console.log('Deactivated ' + prev + ' with duration ' + duration);
+        }
+        activeProject = $(this).attr('data-name');
+        projects[activeProject]['startTime'] = new Date
+        currentTimeString = secondsToDuration(projects[activeProject]['duration']);
+        $('#' + activeProject + '-duration').text(currentTimeString);
+        $('#listview li').attr("data-theme", "a").removeClass("ui-btn-up-b").removeClass('ui-btn-hover-b').addClass("ui-btn-up-c").addClass('ui-btn-hover-c');
+        $(this).attr("data-theme", "b")
+        .removeClass("ui-btn-up-c").removeClass('ui-btn-hover-c').addClass("ui-btn-up-b").addClass('ui-btn-hover-b');
+        console.log("Activated " + activeProject + " with start time " + projects[activeProject]['startTime']);
+        $('#stopTrackerButton').button('enable');
+        startTimer();
+        storeTimex(new Date);
+    }); 
+    
+    $(document).off('click', '#deleteProjectButton').on('click', '#deleteProjectButton', function(){
+        if (activeProject != null)
+        {
+            todelete = activeProject;
+            console.log("Deleting project: " + todelete);
+            deleteProject(todelete);
+            stopTimer();
+        }
+    });
+    
+    $(document).off('click', '#addProjectButton').on('click', '#addProjectButton', function(){
+        var projectName = $('#projectName').val()
+        if (projectName == '') return;
+        if (projectName in projects)
+        {
+            alert('Project "' + projectName + '" already exists.');
+            return;
+        }
+        msg = createProjectListItem(projectName, 0);
+        console.log("Adding project: " + projectName);
+        $('#listview').append(msg);
+        $('#listview').listview('refresh');
+        addProject(projectName);
+        $('#projectName').val('');
+    });
+    
+    $(document).off('click', '#stopTrackerButton').on('click', '#stopTrackerButton', function(){
+        if (activeProject != null)
+        {
+            var duration = $('#' + activeProject + '-duration').text();
+            projects[activeProject]['duration'] = durationToSeconds(duration);
+            delete projects[activeProject]['startTime'];
+            console.log('Deactivated ' + activeProject + ' with duration ' + duration);
+            activeProject = null;
+            storeTimex(new Date);
+            $('#stopTrackerButton').button('disable');
+            stopTimer()
+        }
+    });
+    $(document).off('click', '#reportSubmitButton').on('click', '#reportSubmitButton', function(){
+        sv = $('#startDate').val();
+        ev = $('#endDate').val();
+        if (sv && ev)
+        {
+            s = sv.split('/');
+            e = ev.split('/');
+            startDate = s[2] + '-' + s[0] + '-' + s[1];
+            endDate = e[2] + '-' + e[0] + '-' + e[1];
+            console.log('Creating report for range ' + startDate + " to " + endDate);
+            createReport(startDate, endDate);
+        }
+    });
+    $(document).off('click', '#reportThisWeekButton').on('click', '#reportThisWeekButton', function(){
+        date = new Date;
+        var day = date.getDay();
+        var diff = date.getDate() - day + (day == 0 ? -6:1); 
+        firstDay = new Date(date.setDate(diff));
+        startDate = formatDate(firstDay);
+        diff = firstDay.getDate() + 6;
+        lastDay = new Date(firstDay.setDate(diff));
+        endDate = formatDate(lastDay);
+        console.log('Creating report for range ' + startDate + " to " + endDate);
+        createReport(startDate, endDate);
+    });
+    $(document).off('click', '#reportLastWeekButton').on('click', '#reportLastWeekButton', function(){
+        today = new Date;
+        var date = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 7);
+        var day = date.getDay();
+        var diff = date.getDate() - day + (day == 0 ? -6:1); 
+        firstDay = new Date(date.setDate(diff));
+        startDate = formatDate(firstDay);
+        diff = firstDay.getDate() + 6;
+        lastDay = new Date(firstDay.setDate(diff));
+        endDate = formatDate(lastDay);
+        console.log('Creating report for range ' + startDate + " to " + endDate);
+        createReport(startDate, endDate);
+    });
+    $(document).off('click', '#reportThisMonthButton').on('click', '#reportThisMonthButton', function(){
+        date = new Date;
+        firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
+        startDate = formatDate(firstDay);
+        lastDay = new Date(date.getFullYear(), date.getMonth()+1, 0);
+        endDate = formatDate(lastDay);
+        console.log('Creating report for range ' + startDate + " to " + endDate);
+        createReport(startDate, endDate);
+    });
+    $(document).off('click', '#reportLastMonthButton').on('click', '#reportLastMonthButton', function(){
+        date = new Date;
+        firstDay = new Date(date.getFullYear(), date.getMonth()-1, 1);
+        startDate = formatDate(firstDay);
+        lastDay = new Date(date.getFullYear(), date.getMonth(), 0);
+        endDate = formatDate(lastDay);
+        console.log('Creating report for range ' + startDate + " to " + endDate);
+        createReport(startDate, endDate);
+    });
+    $(document).off('click', '#clearDatabaseButton').on('click', '#clearDatabaseButton', function(){
+        var req = indexedDB.deleteDatabase("timex_db");
+        req.onsuccess = function () {
+            console.log("Deleted database successfully");
+        };
+        req.onerror = function () {
+            console.log("Couldn't delete database");
+        };
+        req.onblocked = function () {
+            console.log("Couldn't delete database due to the operation being blocked");
+        };
+    });
+    $(document).off('click', '#exportDataButton').on('click', '#exportDataButton', function(){
+        var transaction = db.transaction(["timex"], "readonly");
+        var objectStore = transaction.objectStore("timex");
+
+        var cursor = objectStore.openCursor();
+        var data = {}
+        var w = window.open("export.html", "_blank", "menubar=yes", false);
+        var d = w.document;
+        d.charset = "utf-8";
+        d.open('text/plain', 'replace');
+        
+        cursor.onsuccess = function(e) {
+            var res = e.target.result;
+            if(res) {
+                var projs = res.value['projects']
+                var actproj = res.value['activeProject']
+                var st = res.value['startTime']
+                var date = res.value['date']
+                var export_project = {}
+                data[date] = export_project
+                for (var p in projs)
+                {
+                    var duration = projs[p]['duration']
+                    if (actproj == p)
+                    {
+                        var date = new Date(date)
+                        var today = new Date
+                        if (today.toDateString() == date.toDateString())
+                        {
+                            date = today
+                        }
+                        else
+                        {
+                            // a timex record wasn't closed
+                            date.setHours(24, 0, 0, 0)
+                        }
+                        duration += (date - st) / 1000;
+                    }
+                    export_project[p] = secondsToDuration(duration);
+                }
+                res.continue();
+            }
+        }
+        transaction.oncomplete = function(e)
+        {
+            var json = JSON.stringify(data);
+            console.log(json)
+            d.write(json);
+            d.close();
+        }
+    });
+    
+});
+
+$(document).on('pagebeforeshow', '#tracker', function(){
+    setActiveDuration()
+    startTimer();
+});
+
+$(document).on('pagebeforehide', '#tracker', function(){       
+    stopTimer();
+});
+
+var timerHandler = {
+    timer1 : null
+}
+
+function startTimer()
+{
+    if (timerHandler.timer1 != null) return;
+    console.log('Start timer')
+    timerHandler.timer1 = setInterval(function () {
+        setActiveDuration()
+    }, 1000);
+}
+
+function stopTimer()
+{
+    console.log('Stop timer')
+    clearInterval(timerHandler.timer1);
+    timerHandler.timer1 = null;
+}
+
+function setActiveDuration()
+{
+    if (activeProject == null) return;
+    var start = projects[activeProject]['startTime']
+    var duration = projects[activeProject]['duration']
+    var total_seconds = (new Date - start) / 1000;  
+    if (isNaN(total_seconds) || isNaN(duration)) return; 
+    var currentTimeString = secondsToDuration(total_seconds + duration)
+    $('#' + activeProject + '-duration').text(currentTimeString);
+}
+
+function addProject(projectName) 
+{
+    // store in memory list
+    project = {}
+    project['name'] = projectName;
+    project['duration'] = 0;
+    projects[projectName] = project;
+    console.log("Added project " + name);
+    storeTimex(new Date)
+}
+
+function deleteProject(projectName) 
+{
+    delete projects[projectName]
+    activeProject = null    
+    console.log("Deleted project " + projectName);
+    storeTimex(new Date, readProjects); 
+}
+
+function createReport(startDate, endDate)
+{
+    // lookup record
+    var indexTransaction = db.transaction(["timex"], "readonly");
+    var store = indexTransaction.objectStore("timex");
+    var index = store.index("date");
+    var range = IDBKeyRange.bound(startDate, endDate);
+    report = {}
+    index.openCursor(range).onsuccess = function(evt) {
+         var cursor = evt.target.result;
+         if (cursor) {
+             console.log('Report: Found timex data for ' + cursor.value['date']);
+             storedProjects = cursor.value['projects']
+             for (var projectName in storedProjects)
+             {
+                 var duration = storedProjects[projectName]['duration'];
+                 console.log('Project ' + projectName + ': ' + duration);
+                 if (projectName in report)
+                 {
+                     report[projectName] += duration;
+                 }
+                 else
+                 {
+                     report[projectName] = duration;
+                 }
+             }
+             if ('activeProject' in cursor.value)
+             {
+                 var date = new Date(cursor.value['date'])
+                 var today = new Date
+                 if (today.toDateString() == date.toDateString())
+                 {
+                     date = today
+                 }
+                 else
+                 {
+                     // a timex record wasn't closed
+                     date.setHours(24, 0, 0, 0)
+                 }
+                 var ap = cursor.value['activeProject']
+                 var st = cursor.value['startTime']
+                 report[ap] += (date - st) / 1000;
+                 console.log('Active project ' + projectName + ': ' + report[ap]);
+             }
+             cursor.continue();
+         }
+     };  
+     indexTransaction.oncomplete = function(evt)
+     {
+         $('#report_date_range').text(startDate + " to " + endDate);
+         $('#reportListView').empty().append(createProjectListHeader());
+         for (projectName in report)
+         {
+             var duration = secondsToDuration(report[projectName], false);
+             msg = createProjectListItem(projectName, report[projectName], false);
+             $('#reportListView').append(msg);
+             $('#reportListView').listview('refresh');
+         }
+         reportWithDurations = {}
+         for (var p in report)
+         {
+             reportWithDurations[p] = secondsToDuration(report[p], false);
+         }
+         json = JSON.stringify(reportWithDurations);
+         console.log(json);
+         document.getElementById('downloadReportAsJSON').href="data:text/json," + json;
+         document.getElementById('downloadReportAsJSON').download = 'Timex_' + startDate + "_" + endDate + ".jsn";
+     } 
+}
+
+function storeTimex(forDate, oncomplete)
+{ 
+    date = formatDate(forDate);
+
+    // // lookup record
+    // var indexTransaction = db.transaction(["timex"], "readonly");
+    // var store = indexTransaction.objectStore("timex");
+    // var index = store.index("date");
+    // var timexKey = null;
+    // var range = IDBKeyRange.only(date);
+    // var request = index.get(date);
+    // index.openCursor(range).onsuccess = function(evt) {
+    //     var cursor = evt.target.result;
+    //     if (cursor) {
+    //         timexKey = cursor.primaryKey;
+    //         cursor.continue();
+    //     }
+    // };
+
+    var timexRecord = {
+        'date' : date,
+        'projects' : {}
+    }
+    
+    if (activeProject != null)
+    {
+        timexRecord['activeProject'] = activeProject;
+        timexRecord['startTime'] = projects[activeProject]['startTime'];
+    }
+    for (var projectName in projects )
+    {
+        var project = {
+        'name' : projectName,
+        'duration' : projects[projectName]['duration']
+        }
+        timexRecord['projects'][projectName] = project;
+    }
+
+    // indexTransaction.oncomplete = function(e){
+    
+    var transaction = db.transaction(["timex"], "readwrite");
+    var store = transaction.objectStore("timex");
+
+    var request = store.put(timexRecord);
+
+    request.onerror = function(e) {
+        console.log("Error",e.target.error.name);
+        //some type of error handler
+    }
+
+    request.onsuccess = function(e) {
+        console.log('Wrote timex data for ' + date)
+    }
+    
+    if (oncomplete === undefined)
+    {}
+    else
+    {
+        transaction.oncomplete = function(evt) { oncomplete() };
+    }
+    // }
+}
+
+function storeEditedTimex(date, editedProjects)
+{ 
+    var timexRecord = {
+        'date' : date,
+        'projects' : editedProjects
+    }
+    
+    for (var projectName in editedProjects )
+    {
+        duration = timexRecord['projects'][projectName]['duration']
+    }
+
+    var transaction = db.transaction(["timex"], "readwrite");
+    var store = transaction.objectStore("timex");
+ 
+    var request = store.put(timexRecord);
+
+    request.onerror = function(e) {
+        console.log("Error",e.target.error.name);
+        //some type of error handler
+    }
+
+    request.onsuccess = function(e) {
+        editReset('Updated record for ' + date + '.');
+        console.log('Wrote timex data for ' + date)
+    }
+        
+}
+
+</script>
+
+<div data-role="page" id="tracker">
+
+	<div data-role="header" id="trackerHeader">
+        <h2><div id="tracker_date"></div></h2>
+        <a href="#menu" class="ui-btn ui-icon-bars ui-btn-icon-notext ui-btn-right ui-corner-all"></a>
+	</div><!-- /header -->
+  
+    <div data-role="panel" id="menu" data-display="overlay" data-position="right" >
+        <div class="ui-corner-all custom-corners">
+          <div class="ui-bar ui-bar-a">
+            <h3>Tracker</h3>
+          </div>
+          <div class="ui-body ui-body-a" >
+              <input id="stopTrackerButton" value="Stop" type="button" data-rel="close"></input> 
+          </div>
+        </div>
+        <div class="ui-corner-all custom-corners">
+          <div class="ui-bar ui-bar-a">
+            <h3>Projects</h3>
+          </div>
+          <div class="ui-body ui-body-a" >
+             <a href="#editProjects" class="ui-btn ui-shadow">Edit Data</a>
+             <a href="#addProject" data-rel="popup" class="ui-btn ui-shadow">Add Project</a>
+             <button id="deleteProjectButton" class="ui-btn ui-shadow" data-rel="close">Delete Selected</button>
+          </div>
+        </div>
+        <div class="ui-corner-all custom-corners">
+          <div class="ui-bar ui-bar-a">
+            <h3>Report</h3>
+          </div>
+          <div class="ui-body ui-body-a" >
+             <a href="#report" class="ui-btn ui-shadow" data-transition="slide">Create Report</a>
+          </div>
+        </div>
+        <!--
+        <div class="ui-corner-all custom-corners">
+          <div class="ui-bar ui-bar-a">
+            <h3>Database</h3>
+          </div>
+          <div class="ui-body ui-body-a" >
+              <input id="clearDatabaseButton" value="Clear" type="button" data-rel="close"></input> 
+          </div>
+        </div>
+            -->
+    </div>
+    <div data-role="panel" id="addProject" data-display="overlay" data-position="right">
+        <div>
+            <label for="projectName">Project Name:</label>
+            <input id="projectName" value="" data-theme="a" type="text">
+        </div>
+        <div>
+            <button id="addProjectButton" class="ui-btn ui-corner-all ui-btn-inline" data-rel="close">Add</button>
+            <button id="addProjectButtonCancel" class="ui-btn ui-corner-all ui-btn-inline" data-rel="close">Cancel</button>
+        </div>
+    </div>
+
+    <div role="main" class="ui-content">
+        
+        <ul data-role="listview" data-inset="true" data-icon="false" id="listview">
+            <li>
+                <div class="ui-grid-a">
+                    <div class="ui-block-a" style="width:60%">
+                        <div class="ui-bar"><h3>Project</h3></div>
+                    </div>
+                    <div class="ui-block-b" style="width:40%">
+                        <div class="ui-bar"><h3>Time</h3></div>
+                    </div>
+                </div>
+            </li>
+        </ul>
+        
+    </div>
+
+</div><!-- /page -->
+
+<!-- Start of second page -->
+<div data-role="page" id="report">
+
+	<div data-role="header">
+		<a href="#tracker" class="ui-btn ui-btn-icon-left ui-icon-carat-l" data-transition="slide" data-direction="reverse">Tracker</a>
+		<h1>Create Report</h1>
+	</div><!-- /header -->
+
+	<div role="main" class="ui-content">
+        
+        <h3>Select a date range:</h3>
+        <div>
+            <input type="text" data-role="date" id="startDate">
+            <input type="text" data-role="date" id="endDate">
+        </div>
+        <a href="#reportResult" id="reportSubmitButton" class="ui-btn" data-transition="slide">Submit</a>
+
+        <h3>Or select one of the following:</h3>
+        <div>
+            <a href="#reportResult" class="ui-btn" id="reportThisWeekButton" data-transition="slide">This Week</a>
+            <a href="#reportResult" class="ui-btn" id="reportLastWeekButton" data-transition="slide">Last Week</a>
+            <a href="#reportResult" class="ui-btn" id="reportThisMonthButton" data-transition="slide">This Month</a>
+            <a href="#reportResult" class="ui-btn" id="reportLastMonthButton" data-transition="slide">Last Month</a>
+        </div>
+        
+        <h3>Export as JSON</h3>
+        <div>
+            <a id="exportDataButton" class="ui-btn ui-shadow" download="report.json" href="data:text/json,test">Complete dataset</a>
+        </div>
+
+    </div>
+
+</div><!-- /page -->
+
+<div data-role="page" id="reportResult">
+
+	<div data-role="header">
+		<a href="#report" class="ui-btn ui-btn-icon-left ui-icon-carat-l" data-transition="slide" data-direction="reverse">Report</a>
+		<h1 id="report_date_range">Report</h1>
+	</div><!-- /header -->
+
+	<div role="main" class="ui-content">
+        
+        <ul data-role="listview" data-inset="true" data-icon="false" id="reportListView">
+            <li>
+                <div class="ui-grid-a">
+                    <div class="ui-block-a" style="width:60%">
+                        <div class="ui-bar"><h3>Project</h3></div>
+                    </div>
+                    <div class="ui-block-b" style="width:40%">
+                        <div class="ui-bar"><h3>Time</h3></div>
+                    </div>
+                </div>
+            </li>
+        </ul>
+        
+        <a id="downloadReportAsJSON" class="ui-btn ui-shadow">Download as JSON</a>
+    </div>
+
+</div>
+
+<div data-role="page" id="editProjects">
+
+	<div data-role="header">
+		<a href="#tracker" class="ui-btn ui-btn-icon-left ui-icon-carat-l" data-transition="slide" data-direction="reverse">Tracker</a>
+		<h1>Edit</h1>
+	</div><!-- /header -->
+
+	<div role="main" class="ui-content">
+        <form>
+            <div>Enter a date: (YYYY-MM-DD)</div>
+            
+            <!--<div><input type="text" type="date" id="editDate"></div>-->
+            <div class="ui-grid-b">
+                <div class="ui-block-a" style="width:20%">
+                    <span style="float:right;">
+                        <a href="" id="editLoadPrevDateButton" class="ui-btn ui-icon-carat-l ui-btn-icon-notext ui-corner-all" type="button"></a>
+                    </span>
+                </div>
+                <div class="ui-block-b" style="width:40%">
+                    <input type="text" type="date" id="editDate">
+                </div>
+                <div class="ui-block-c" style="width:20%">
+                     <a href="" id="editLoadNextDateButton" class="ui-btn ui-icon-carat-r ui-btn-icon-notext ui-corner-all" type="button"></a>
+                </div>
+            </div>
+                
+            <input id="editLoadButton" data-inline="true" value="Load" type="button"></input>
+            <input id="editSaveButton" data-inline="true" value="Save" type="button" disabled=""></input>
+            <input id="editCancelButton" data-inline="true" value="Cancel" type="button"></input>
+        </form>
+        <ul data-role="listview" data-inset="true" data-icon="false" id="editListView">
+           <li data-role="list-divider"><h2>Please select a date.<h2></li>
+        </ul>
+        <form>
+            <label for="text-1">Add a project:</label>
+            <input type="text" disabled="" id="editAddProjectText"></input>
+            <input id="editAddProjectButton" data-inline="true" value="Add Project" type="button" disabled=""></input>
+        </form>
+    </div>
+
+</div>
+
+</body>
+</html>
