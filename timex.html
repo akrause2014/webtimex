@@ -698,20 +698,20 @@ function storeTimex(forDate, oncomplete)
 { 
     date = formatDate(forDate);
 
-    // // lookup record
-    // var indexTransaction = db.transaction(["timex"], "readonly");
-    // var store = indexTransaction.objectStore("timex");
-    // var index = store.index("date");
-    // var timexKey = null;
-    // var range = IDBKeyRange.only(date);
-    // var request = index.get(date);
-    // index.openCursor(range).onsuccess = function(evt) {
-    //     var cursor = evt.target.result;
-    //     if (cursor) {
-    //         timexKey = cursor.primaryKey;
-    //         cursor.continue();
-    //     }
-    // };
+    // lookup record
+    var indexTransaction = db.transaction(["timex"], "readonly");
+    var store = indexTransaction.objectStore("timex");
+    var index = store.index("date");
+    var timexKey = null;
+    var range = IDBKeyRange.only(date);
+    var request = index.get(date);
+    index.openCursor(range).onsuccess = function(evt) {
+        var cursor = evt.target.result;
+        if (cursor) {
+            timexKey = cursor.primaryKey;
+            cursor.continue();
+        }
+    };
 
     var timexRecord = {
         'date' : date,
@@ -732,29 +732,47 @@ function storeTimex(forDate, oncomplete)
         timexRecord['projects'][projectName] = project;
     }
 
-    // indexTransaction.oncomplete = function(e){
+    indexTransaction.oncomplete = function(e){
     
-    var transaction = db.transaction(["timex"], "readwrite");
-    var store = transaction.objectStore("timex");
+        var transaction = db.transaction(["timex"], "readwrite");
+        var store = transaction.objectStore("timex");
 
-    var request = store.put(timexRecord);
+        var request;
+        if (timexKey == null)
+        {
+            request = store.put(timexRecord);
+        }
+        else
+        {
+            try
+            {
+                // this works for iOS Safari but not for Chrome...
+                // Safari creates a primary key in addition to the inline key
+                request = store.put(timexRecord, timexKey);
+            }
+            catch(e)
+            {
+                // try again the proper way
+                request = store.put(timexRecord);
+            }
+        }
 
-    request.onerror = function(e) {
-        console.log("Error",e.target.error.name);
-        //some type of error handler
-    }
+        request.onerror = function(e) {
+            console.log("Error",e.target.error.name);
+            //some type of error handler
+        }
 
-    request.onsuccess = function(e) {
-        console.log('Wrote timex data for ' + date)
-    }
+        request.onsuccess = function(e) {
+            console.log('Wrote timex data for ' + date)
+        }
     
-    if (oncomplete === undefined)
-    {}
-    else
-    {
-        transaction.oncomplete = function(evt) { oncomplete() };
+        if (oncomplete === undefined)
+        {}
+        else
+        {
+            transaction.oncomplete = function(evt) { oncomplete() };
+        }
     }
-    // }
 }
 
 function storeEditedTimex(date, editedProjects)
