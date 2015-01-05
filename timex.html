@@ -909,7 +909,7 @@ function storeEditedTimex(date, editedProjects)
         
         <h3>Export as JSON</h3>
         <div>
-            <a id="exportDataButton" class="ui-btn ui-shadow" download="report.json" href="data:text/json,test">Complete dataset</a>
+            <a id="exportDataButton" class="ui-btn ui-shadow">Complete dataset</a>
         </div>
 
     </div>
@@ -988,7 +988,7 @@ function storeEditedTimex(date, editedProjects)
 <div data-role="page" id="documentation">
     <div data-role="header">
         <h1>Documentation</h1>
-        <a href="#tracker" class="ui-btn ui-btn-right ui-btn-icon-right ui-icon-carat-r" data-transition="slide">Tracker</a>
+        <a href="#tracker" class="ui-btn ui-btn-right ui-icon-carat-r ui-btn-icon-notext" data-transition="slide">Tracker</a>
     </div><!-- /header -->
     <div role="main" class="ui-content">
         <h3>Tracker</h3>
@@ -1027,6 +1027,9 @@ function storeEditedTimex(date, editedProjects)
             Or select one of the date ranges below, for last week or last month for example.
             The report can be saved as a JSON file.
         </p>
+    </div>
+    <div data-role="footer">
+        <a href="#tracker" class="ui-btn ui-btn-right ui-icon-carat-r ui-btn-icon-notext" data-transition="slide">Tracker</a>
     </div>
 </div> 
 
