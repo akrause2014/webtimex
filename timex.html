@@ -517,10 +517,6 @@ $(document).bind('pagecreate', '#tracker', function(evt)
 
         var cursor = objectStore.openCursor();
         var data = {}
-        var w = window.open("export.html", "_blank", "menubar=yes", false);
-        var d = w.document;
-        d.charset = "utf-8";
-        d.open('text/plain', 'replace');
         
         cursor.onsuccess = function(e) {
             var res = e.target.result;
@@ -558,10 +554,9 @@ $(document).bind('pagecreate', '#tracker', function(evt)
         {
             var json = JSON.stringify(data);
             console.log(json)
-            d.write(json);
-            d.close();
         }
     });
+    
     
 });
 
@@ -799,7 +794,7 @@ function storeEditedTimex(date, editedProjects)
 
     request.onsuccess = function(e) {
         editReset('Updated record for ' + date + '.');
-        console.log('Wrote timex data for ' + date)
+        console.log('Wrote timex data for ' + date);
     }
         
 }
@@ -907,11 +902,12 @@ function storeEditedTimex(date, editedProjects)
             <a href="#reportResult" class="ui-btn" id="reportLastMonthButton" data-transition="slide">Last Month</a>
         </div>
         
+        <!--
         <h3>Export as JSON</h3>
         <div>
-            <a id="exportDataButton" class="ui-btn ui-shadow">Complete dataset</a>
+            <a href="#allRecords" id="exportDataButton" class="ui-btn ui-shadow" data-transition="slide">Complete dataset</a>
         </div>
-
+            -->
     </div>
 
 </div><!-- /page -->
@@ -983,6 +979,12 @@ function storeEditedTimex(date, editedProjects)
         </form>
     </div>
 
+</div>
+
+<div data-role="page" id="allRecords">
+    <div data-role="main" class="ui-content">
+        <pre id="allRecordsJSON"></pre>
+    </div>
 </div>
 
 <div data-role="page" id="documentation">
