@@ -809,6 +809,7 @@ function storeEditedTimex(date, editedProjects)
 <div data-role="page" id="tracker">
 
 	<div data-role="header" id="trackerHeader">
+        <a href="#documentation" class="ui-btn ui-icon-info ui-btn-icon-notext ui-btn-left ui-corner-all" data-transition="slide" data-direction="reverse"></a>
         <h2><div id="tracker_date"></div></h2>
         <a href="#menu" class="ui-btn ui-icon-bars ui-btn-icon-notext ui-btn-right ui-corner-all"></a>
 	</div><!-- /header -->
@@ -983,6 +984,51 @@ function storeEditedTimex(date, editedProjects)
     </div>
 
 </div>
+
+<div data-role="page" id="documentation">
+    <div data-role="header">
+        <h1>Documentation</h1>
+        <a href="#tracker" class="ui-btn ui-btn-right ui-btn-icon-right ui-icon-carat-r" data-transition="slide">Tracker</a>
+    </div><!-- /header -->
+    <div role="main" class="ui-content">
+        <h3>Tracker</h3>
+        <p>
+            When the tracker is opened the first time the project list is empty. 
+            To add a project, click on the menu button at the top left and select "Add Project".
+        </p>
+        <p>
+            To activate a project select it in the list. 
+            To pause the active project use the "Stop" button.
+            An active project is restored when the browser window is closed and reopened or the page is reloaded.
+        </p>
+        <p>
+            To delete a project click on the project in the list and select "Delete Selected" from the menu.
+            This deletes the data for today.
+        </p>
+        <p>
+            At the end of the day stop the active project explicitly by pressing the "Stop" button. 
+            This completes the day and stores the record.
+        </p>
+        <p>
+            The timex data is stored locally in the browser. 
+            You cannot see the data from another browser, nor can anyone else access your data.
+            If accessing the page from another browser a new empty data store is created.
+        </p>
+        <h3>Editing</h3>
+        <p>
+            It is possible to edit the existing records. Select "Edit data" from the menu.
+            Enter the date or use the buttons next to the text input to move to the next or previous day of the current date.
+            Click "Load" to load the timex data for the selected day into the table. Click "Save" to update the record, or "Cancel".
+        </p>
+        <h3>Report</h3>
+        <p>
+            To create a report select "Create Report" in the menu and select a start date and end date. 
+            (Note that the date is displayed in the format "MM/DD/YYYY".)
+            Or select one of the date ranges below, for last week or last month for example.
+            The report can be saved as a JSON file.
+        </p>
+    </div>
+</div> 
 
 </body>
 </html>
