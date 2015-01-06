@@ -405,9 +405,11 @@ $(document).bind('pagecreate', '#tracker', function(evt)
     }); 
     
     $(document).off('click', '#deleteProjectButton').on('click', '#deleteProjectButton', function(){
-        if (activeProject != null)
+        if (activeProject == null) return;
+        todelete = activeProject;
+        var r = confirm("Delete project " + todelete + "?");
+        if (r == true) 
         {
-            todelete = activeProject;
             console.log("Deleting project: " + todelete);
             deleteProject(todelete);
             stopTimer();
@@ -810,6 +812,7 @@ function storeEditedTimex(date, editedProjects)
 	</div><!-- /header -->
   
     <div data-role="panel" id="menu" data-display="overlay" data-position="right" >
+        <!--
         <div class="ui-corner-all custom-corners">
           <div class="ui-bar ui-bar-a">
             <h3>Tracker</h3>
@@ -818,6 +821,7 @@ function storeEditedTimex(date, editedProjects)
               <input id="stopTrackerButton" value="Stop" type="button" data-rel="close"></input> 
           </div>
         </div>
+        -->
         <div class="ui-corner-all custom-corners">
           <div class="ui-bar ui-bar-a">
             <h3>Projects</h3>
@@ -872,6 +876,8 @@ function storeEditedTimex(date, editedProjects)
                 </div>
             </li>
         </ul>
+        <input id="stopTrackerButton" value="Pause" type="button" data-rel="close"></input> 
+        
         
     </div>
 
@@ -996,20 +1002,22 @@ function storeEditedTimex(date, editedProjects)
         <h3>Tracker</h3>
         <p>
             When the tracker is opened the first time the project list is empty. 
-            To add a project, click on the menu button at the top left and select "Add Project".
+            To add a project, click on the menu button at the top right  and select "Add Project".
         </p>
         <p>
             To activate a project select it in the list. 
-            To pause the active project use the "Stop" button.
+            To pause the active project use the "Pause" button.
             An active project is restored when the browser window is closed and reopened or the page is reloaded.
         </p>
         <p>
             To delete a project click on the project in the list and select "Delete Selected" from the menu.
-            This deletes the data for today.
+            This deletes the data of the selected project for today.
         </p>
         <p>
-            At the end of the day stop the active project explicitly by pressing the "Stop" button. 
-            This completes the day and stores the record.
+            At the end of the day it is important to stop the activity by pressing the "Stop" button.
+            This completes the day and stores the record. 
+            Otherwise the selected project remains active - 
+            <i>closing the window does not stop the tracker.</i>
         </p>
         <p>
             The timex data is stored locally in the browser. 
