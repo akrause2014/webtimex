@@ -42,7 +42,9 @@ function durationToSeconds(s)
     var minutes = parseInt(parts[1]);
     var seconds = 0;
     if (parts.length >= 3)
+    {
         seconds = parseInt(parts[2]);
+    }   
     totalSeconds = hours*3600 + minutes*60 + seconds;
     return totalSeconds;
 }
@@ -257,6 +259,7 @@ function loadEditDate()
             for (var projectName in editedProjects)
             {
                 var durationInSeconds = editedProjects[projectName]['duration']
+                if (isNaN(durationInSeconds)) durationInSeconds = 0;
                 var duration = secondsToDuration(durationInSeconds, false);
                 msg =  "<li>"
                 msg += "<div class=\"ui-grid-a\">"
@@ -295,8 +298,8 @@ $(document).bind('pagecreate', '#editProjects', function(evt)
                 var duration = durationToSeconds(durationStr);
                 if (isNaN(duration))
                 {
-                    alert('Could not parse ' + durationStr + ' for project ' + projectName
-                                    + '.\nPlease use the format "hh:mm".');
+                    alert('Could not parse time for project ' + projectName
+                          + '.\nPlease use the format "hh:mm".');
                     return;
                 }
                 editedProjects[projectName]['duration'] = duration;
@@ -458,6 +461,7 @@ $(document).bind('pagecreate', '#tracker', function(evt)
             projects[activeProject]['duration'] = durationToSeconds(duration);
             delete projects[activeProject]['startTime'];
             console.log('Deactivated ' + activeProject + ' with duration ' + duration);
+            $('#listview').find('li[data-name=\"' + activeProject + '\"]').attr("data-theme", "a").attr("data-theme", "a").removeClass('active');
             activeProject = null;
             storeTimex(new Date);
             $('#stopTrackerButton').button('disable');
@@ -800,7 +804,11 @@ function storeEditedTimex(date, editedProjects)
     
     for (var projectName in editedProjects )
     {
-        duration = timexRecord['projects'][projectName]['duration']
+        var duration = timexRecord['projects'][projectName]['duration']
+        if (isNaN(duration))
+        {
+            timexRecord['projects'][projectName]['duration'] = 0
+        }
     }
 
     var transaction = db.transaction(["timex"], "readwrite");
