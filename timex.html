@@ -146,12 +146,6 @@ function readProjects()
                     $('#stopTrackerButton').button('enable');
                 
                 var listItems = $('#listview li');
-                // listItems.each(function(idx, li) {
-                //     if ($(li).attr('data-name') == activeProject)
-                //     {
-                //         $(li).attr("data-theme", "a").attr("data-theme", "a").addClass('active');
-                //     }
-                // });
                 $('#listview').find('li[data-name=\"' + activeProject + '\"]').attr("data-theme", "a").attr("data-theme", "a").addClass('active');
             }
         }
@@ -258,10 +252,12 @@ function loadEditDate()
     index.openCursor(range).onsuccess = function(evt) {
         var cursor = evt.target.result;
         if (cursor) {
+            actProj = cursor.value['activeProject'];
             editedProjects = cursor.value['projects'];
             for (var projectName in editedProjects)
             {
-                var duration = secondsToDuration(editedProjects[projectName]['duration'], false);
+                var durationInSeconds = editedProjects[projectName]['duration']
+                var duration = secondsToDuration(durationInSeconds, false);
                 msg =  "<li>"
                 msg += "<div class=\"ui-grid-a\">"
                 msg += "<div class=\"ui-block-a\" style=\"width:60%\">"
@@ -335,8 +331,6 @@ $(document).bind('pagecreate', '#editProjects', function(evt)
         $('#editListView').listview('refresh');
         $('#editAddProjectText').val('');
     });    
-    // $("#editDate").datepicker({
-    //   onSelect:
     $(document).off('click', '#editLoadPrevDateButton').on('click', '#editLoadPrevDateButton', function(){
         console.log('load previous date')
         if (!$('#editDate').val()) return;
@@ -359,6 +353,11 @@ $(document).bind('pagecreate', '#editProjects', function(evt)
         loadEditDate();
     });
 });
+
+$(document).on('pagebeforeshow', '#editProjects', function(){
+    if (db !== undefined) loadEditDate();
+});
+
 
 $(document).bind('pagecreate', '#tracker', function(evt) 
 {
@@ -974,7 +973,7 @@ function storeEditedTimex(date, editedProjects)
 
 	<div role="main" class="ui-content">
         <form>
-            <div>Enter a date: (YYYY-MM-DD)</div>
+            <div>Enter a date (format YYYY-MM-DD). <i>Note: Before editing today's times you must pause the tracker.</i></div>
             
             <!--<div><input type="text" type="date" id="editDate"></div>-->
             <div class="ui-grid-b">
