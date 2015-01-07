@@ -6,6 +6,11 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="jquery.mobile-1.4.5/jquery.mobile-1.4.5.min.css" />
     <link rel="stylesheet" href="js/jquery.mobile.datepicker.css"/>
+    <style>
+    #listview li.active a {
+        background: lightyellow !important;
+    }
+    </style>
     <script src="http://code.jquery.com/jquery-1.11.2.js"></script>
     <script src="jquery.mobile-1.4.5/jquery.mobile-1.4.5.min.js"></script>
     <script src="js/jquery.ui.datepicker.js"></script>
@@ -111,13 +116,20 @@ function readProjects()
             activeProject = null;
             storeTimex(new Date)
         }
+        var total_duration = 0
         for (var projectName in projects)
         {
-            console.log('Setting ' + projectName + " with duration " + secondsToDuration(projects[projectName]['duration']))
-            $('#listview').append(createProjectListItem(projectName, projects[projectName]['duration']));
+            var duration = projects[projectName]['duration']
+            total_duration += duration
+            console.log('Setting ' + projectName + " with duration " + secondsToDuration(duration))
+            $('#listview').append(createProjectListItem(projectName, duration));
             if(typeof $('#listview').listview() !== "undefined")
                 $('#listview').listview('refresh');
         }
+        // $('#listview').append("<li data-role=\"list-divider\"></li>")
+        // $('#listview').append(createProjectListItem("Total", total_duration));
+        if(typeof $('#listview').listview() !== "undefined")
+            $('#listview').listview('refresh');
         if (date == lastDate)
         {
             var startTime = lastDateRecord['startTime'];
@@ -132,6 +144,15 @@ function readProjects()
                 $('#' + activeProject + '-duration').text(currentTimeString);
                 if(typeof $('#stopTrackerButton').button() !== "undefined")
                     $('#stopTrackerButton').button('enable');
+                
+                var listItems = $('#listview li');
+                // listItems.each(function(idx, li) {
+                //     if ($(li).attr('data-name') == activeProject)
+                //     {
+                //         $(li).attr("data-theme", "a").attr("data-theme", "a").addClass('active');
+                //     }
+                // });
+                $('#listview').find('li[data-name=\"' + activeProject + '\"]').attr("data-theme", "a").attr("data-theme", "a").addClass('active');
             }
         }
     };
@@ -395,9 +416,8 @@ $(document).bind('pagecreate', '#tracker', function(evt)
         projects[activeProject]['startTime'] = new Date
         currentTimeString = secondsToDuration(projects[activeProject]['duration']);
         $('#' + activeProject + '-duration').text(currentTimeString);
-        $('#listview li').attr("data-theme", "a").removeClass("ui-btn-up-b").removeClass('ui-btn-hover-b').addClass("ui-btn-up-c").addClass('ui-btn-hover-c');
-        $(this).attr("data-theme", "b")
-        .removeClass("ui-btn-up-c").removeClass('ui-btn-hover-c').addClass("ui-btn-up-b").addClass('ui-btn-hover-b');
+        $('#listview li').attr("data-theme", "a").removeClass("ui-btn-up-b").removeClass('ui-btn-hover-b').removeClass('active').addClass("ui-btn-up-c").addClass('ui-btn-hover-c');
+        $(this).attr("data-theme", "b").removeClass("ui-btn-up-c").removeClass('ui-btn-hover-c').addClass("ui-btn-up-b").addClass('ui-btn-hover-b').addClass('active');
         console.log("Activated " + activeProject + " with start time " + projects[activeProject]['startTime']);
         $('#stopTrackerButton').button('enable');
         startTimer();
