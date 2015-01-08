@@ -659,6 +659,7 @@ function createReport(startDate, endDate)
              for (var projectName in storedProjects)
              {
                  var duration = storedProjects[projectName]['duration'];
+                 if (isNaN(duration)) duration = 0;
                  console.log('Project ' + projectName + ': ' + duration);
                  if (projectName in report)
                  {
@@ -694,18 +695,22 @@ function createReport(startDate, endDate)
      {
          $('#report_date_range').text(startDate + " to " + endDate);
          $('#reportListView').empty().append(createProjectListHeader());
+         var total_duration = 0;
+         var reportWithDurations = {}
          for (projectName in report)
          {
-             var duration = secondsToDuration(report[projectName], false);
-             msg = createProjectListItem(projectName, report[projectName], false);
+             var durationInSeconds = report[projectName]
+             reportWithDurations[projectName] = secondsToDuration(durationInSeconds, false);
+             total_duration += durationInSeconds;
+             msg = createProjectListItem(projectName, durationInSeconds, false);
              $('#reportListView').append(msg);
              $('#reportListView').listview('refresh');
          }
-         reportWithDurations = {}
-         for (var p in report)
-         {
-             reportWithDurations[p] = secondsToDuration(report[p], false);
-         }
+         msg = createProjectListItem("Total", total_duration, false);
+         $('#reportListView').append("<li data-role=\"list-divider\"></li>")
+         $('#reportListView').append(msg);
+         $('#reportListView').listview('refresh');
+         
          json = JSON.stringify(reportWithDurations);
          console.log(json);
          document.getElementById('downloadReportAsJSON').href="data:text/json," + json;
@@ -1005,7 +1010,7 @@ function storeEditedTimex(date, editedProjects)
            <li data-role="list-divider"><h2>Please select a date.<h2></li>
         </ul>
         <form>
-            <label for="text-1">Add a project:</label>
+            <label for="editAddProjectText">Add a project:</label>
             <input type="text" disabled="" id="editAddProjectText"></input>
             <input id="editAddProjectButton" data-inline="true" value="Add Project" type="button" disabled=""></input>
         </form>
