@@ -227,7 +227,7 @@ function editAddRow(projectName, durationInSeconds)
     msg += "<div class=\"ui-block-b\" style=\"width:40%\">"
     msg += "<div class=\"ui-bar\">"
     msg += "<div class=\"ui-input-text ui-body-inherit ui-corner-all ui-shadow-inset\">"
-    msg += "<input type=\"text\" value=\"" + duration + "\" id=\"editProjectDuration-" + projectName + "\">"
+    msg += "<input type=\"time\" value=\"" + duration + "\" id=\"editProjectDuration-" + projectName + "\">"
     msg += "</div></div></div></div></li>"
     return msg;
 }
@@ -260,20 +260,21 @@ function loadEditDate()
             {
                 var durationInSeconds = editedProjects[projectName]['duration']
                 if (isNaN(durationInSeconds)) durationInSeconds = 0;
-                var duration = secondsToDuration(durationInSeconds, false);
-                msg =  "<li>"
-                msg += "<div class=\"ui-grid-a\">"
-                msg += "<div class=\"ui-block-a\" style=\"width:60%\">"
-                msg += "<div class=\"ui-bar\">"
-                msg += "<div class=\"ui-input-text ui-body-inherit ui-corner-all ui-shadow-inset\">"
-                msg += "<input type=\"text\" value=\"" + projectName + "\" id=\"editProjectName-" + projectName + "\">"
-                msg += "</div>"
-                msg += "</div></div>"
-                msg += "<div class=\"ui-block-b\" style=\"width:40%\">"
-                msg += "<div class=\"ui-bar\">"
-                msg += "<div class=\"ui-input-text ui-body-inherit ui-corner-all ui-shadow-inset\">"
-                msg += "<input type=\"text\" value=\"" + duration + "\" id=\"editProjectDuration-" + projectName + "\">"
-                msg += "</div></div></div></div></li>"
+                msg = editAddRow(projectName, durationInSeconds)
+                // var duration = secondsToDuration(durationInSeconds, false);
+                // msg =  "<li>"
+                // msg += "<div class=\"ui-grid-a\">"
+                // msg += "<div class=\"ui-block-a\" style=\"width:60%\">"
+                // msg += "<div class=\"ui-bar\">"
+                // msg += "<div class=\"ui-input-text ui-body-inherit ui-corner-all ui-shadow-inset\">"
+                // msg += "<input type=\"text\" value=\"" + projectName + "\" id=\"editProjectName-" + projectName + "\">"
+                // msg += "</div>"
+                // msg += "</div></div>"
+                // msg += "<div class=\"ui-block-b\" style=\"width:40%\">"
+                // msg += "<div class=\"ui-bar\">"
+                // msg += "<div class=\"ui-input-text ui-body-inherit ui-corner-all ui-shadow-inset\">"
+                // msg += "<input type=\"time\" value=\"" + duration + "\" id=\"editProjectDuration-" + projectName + "\">"
+                // msg += "</div></div></div></div></li>"
                 $('#editListView').append(msg)
                 $('#editListView').listview('refresh');
             }
