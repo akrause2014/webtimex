@@ -235,20 +235,22 @@ function editAddRow(projectName, durationInSeconds)
 function loadEditDate()
 {   
     var date = $('#editDate').val()
-    // d = dateText.split('/');
-    // var date = d[2] + '-' + d[0] + '-' + d[1];
-    // $('#editDate').val(date);
-    editedDate = date;
-    console.log("Selected date: " + date);
+    var dateFormat = new RegExp("^\\d\\d\\d\\d-\\d\\d-\\d\\d$")
+    if (!dateFormat.test(date) || isNaN(Date.parse(date)) || formatDate(new Date(date)) != date)
+    {
+        // not a valid date - ignore
+        $('#editAddProjectButton').button('disable');
+        $('#editSaveButton').button('disable');
+        $('#editAddProjectText').textinput('disable');
+        return;
+    }
+    editedDate = date
+    console.log("Selected date: " + editedDate);
     editedProjects = {}
     var indexTransaction = db.transaction(["timex"], "readonly");
     var store = indexTransaction.objectStore("timex");
     var index = store.index("date");
     var range = IDBKeyRange.only(date);
-    $('#editAddProjectButton').button('enable');
-    $('#editSaveButton').button('enable');
-    $('#editSaveButton').button('refresh');    
-    $('#editAddProjectText').textinput('enable');
     $('#editListView').empty().append(createProjectListHeader());
     $('#editListView').listview('refresh');
     index.openCursor(range).onsuccess = function(evt) {
@@ -261,25 +263,14 @@ function loadEditDate()
                 var durationInSeconds = editedProjects[projectName]['duration']
                 if (isNaN(durationInSeconds)) durationInSeconds = 0;
                 msg = editAddRow(projectName, durationInSeconds)
-                // var duration = secondsToDuration(durationInSeconds, false);
-                // msg =  "<li>"
-                // msg += "<div class=\"ui-grid-a\">"
-                // msg += "<div class=\"ui-block-a\" style=\"width:60%\">"
-                // msg += "<div class=\"ui-bar\">"
-                // msg += "<div class=\"ui-input-text ui-body-inherit ui-corner-all ui-shadow-inset\">"
-                // msg += "<input type=\"text\" value=\"" + projectName + "\" id=\"editProjectName-" + projectName + "\">"
-                // msg += "</div>"
-                // msg += "</div></div>"
-                // msg += "<div class=\"ui-block-b\" style=\"width:40%\">"
-                // msg += "<div class=\"ui-bar\">"
-                // msg += "<div class=\"ui-input-text ui-body-inherit ui-corner-all ui-shadow-inset\">"
-                // msg += "<input type=\"time\" value=\"" + duration + "\" id=\"editProjectDuration-" + projectName + "\">"
-                // msg += "</div></div></div></div></li>"
                 $('#editListView').append(msg)
                 $('#editListView').listview('refresh');
             }
             cursor.continue();
         }
+        $('#editAddProjectButton').button('enable');
+        $('#editSaveButton').button('enable');
+        $('#editAddProjectText').textinput('enable');
     };  
 }
   
@@ -356,6 +347,13 @@ $(document).bind('pagecreate', '#editProjects', function(evt)
     $(document).off('click', '#editLoadButton').on('click', '#editLoadButton', function(){
         loadEditDate();
     });
+    $(document).off('change', '#editDate').on('change', '#editDate', function(){
+        loadEditDate();
+    });
+    // not sure below should be on ... a lot of loading all the time
+    // $(document).off('input', '#editDate').on('input', '#editDate', function(){
+    //     loadEditDate();
+    // });
 });
 
 $(document).on('pagebeforeshow', '#editProjects', function(){
@@ -981,7 +979,7 @@ function storeEditedTimex(date, editedProjects)
 	</div><!-- /header -->
 
 	<div role="main" class="ui-content">
-        <form>
+        <div>
             <div>Enter a date (format YYYY-MM-DD). <i>Note: Before editing today's times you must pause the tracker.</i></div>
             
             <!--<div><input type="text" type="date" id="editDate"></div>-->
@@ -1002,7 +1000,7 @@ function storeEditedTimex(date, editedProjects)
             <input id="editLoadButton" data-inline="true" value="Load" type="button"></input>
             <input id="editSaveButton" data-inline="true" value="Save" type="button" disabled=""></input>
             <input id="editCancelButton" data-inline="true" value="Cancel" type="button"></input>
-        </form>
+        </div>
         <ul data-role="listview" data-inset="true" data-icon="false" id="editListView">
            <li data-role="list-divider"><h2>Please select a date.<h2></li>
         </ul>
