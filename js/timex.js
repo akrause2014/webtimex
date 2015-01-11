@@ -118,6 +118,8 @@ function readProjects()
         for (var projectName in projects)
         {
             var duration = projects[projectName]['duration']
+            // catch any malformatted database entries
+            if (isNaN(duration)) duration = 0;
             total_duration += duration
             console.log('Setting ' + projectName + " with duration " + secondsToDuration(duration))
             $('#listview').append(createProjectListItem(projectName, duration));
@@ -324,7 +326,7 @@ $(document).bind('pagecreate', '#editProjects', function(evt)
         $('#editAddProjectText').val('');
     });    
     $(document).off('click', '#editLoadPrevDateButton').on('click', '#editLoadPrevDateButton', function(){
-        console.log('load previous date')
+        // console.log('load previous date')
         if (!$('#editDate').val()) return;
         var date = new Date($('#editDate').val())
         if (date.toString() === "Invalid Date") return;
@@ -337,7 +339,6 @@ $(document).bind('pagecreate', '#editProjects', function(evt)
         var date = new Date($('#editDate').val())
         if (date.toString() === "Invalid Date") return;
         date.setDate(date.getDate()+1);
-        console.log(date)
         $('#editDate').val(formatDate(date));
         loadEditDate();
     });
@@ -472,7 +473,6 @@ $(document).bind('pagecreate', '#tracker', function(evt)
             e = ev.split('/');
             startDate = s[2] + '-' + s[0] + '-' + s[1];
             endDate = e[2] + '-' + e[0] + '-' + e[1];
-            console.log('Creating report for range ' + startDate + " to " + endDate);
             createReport(startDate, endDate);
         }
     });
@@ -485,7 +485,6 @@ $(document).bind('pagecreate', '#tracker', function(evt)
         diff = firstDay.getDate() + 6;
         lastDay = new Date(firstDay.setDate(diff));
         endDate = formatDate(lastDay);
-        console.log('Creating report for range ' + startDate + " to " + endDate);
         createReport(startDate, endDate);
     });
     $(document).off('click', '#reportLastWeekButton').on('click', '#reportLastWeekButton', function(){
@@ -498,7 +497,6 @@ $(document).bind('pagecreate', '#tracker', function(evt)
         diff = firstDay.getDate() + 6;
         lastDay = new Date(firstDay.setDate(diff));
         endDate = formatDate(lastDay);
-        console.log('Creating report for range ' + startDate + " to " + endDate);
         createReport(startDate, endDate);
     });
     $(document).off('click', '#reportThisMonthButton').on('click', '#reportThisMonthButton', function(){
@@ -507,7 +505,6 @@ $(document).bind('pagecreate', '#tracker', function(evt)
         startDate = formatDate(firstDay);
         lastDay = new Date(date.getFullYear(), date.getMonth()+1, 0);
         endDate = formatDate(lastDay);
-        console.log('Creating report for range ' + startDate + " to " + endDate);
         createReport(startDate, endDate);
     });
     $(document).off('click', '#reportLastMonthButton').on('click', '#reportLastMonthButton', function(){
@@ -516,7 +513,6 @@ $(document).bind('pagecreate', '#tracker', function(evt)
         startDate = formatDate(firstDay);
         lastDay = new Date(date.getFullYear(), date.getMonth(), 0);
         endDate = formatDate(lastDay);
-        console.log('Creating report for range ' + startDate + " to " + endDate);
         createReport(startDate, endDate);
     });    
     
@@ -543,7 +539,7 @@ var timerHandler = {
 function startTimer()
 {
     if (timerHandler.timer1 != null) return;
-    console.log('Start timer')
+    // console.log('Start timer')
     timerHandler.timer1 = setInterval(function () {
         setActiveDuration()
     }, 1000);
@@ -551,7 +547,7 @@ function startTimer()
 
 function stopTimer()
 {
-    console.log('Stop timer')
+    // console.log('Stop timer')
     clearInterval(timerHandler.timer1);
     timerHandler.timer1 = null;
 }
@@ -588,6 +584,7 @@ function deleteProject(projectName)
 
 function createReport(startDate, endDate)
 {
+    console.log('Creating report for ' + startDate + " to " + endDate);
     // lookup record
     var indexTransaction = db.transaction(["timex"], "readonly");
     var store = indexTransaction.objectStore("timex");
@@ -618,17 +615,6 @@ function createReport(startDate, endDate)
                  var date = new Date(cursor.value['date'])
                  var ap = cursor.value['activeProject']
                  var st = cursor.value['startTime']
-                 // var today = new Date
-                 // if (today.toDateString() == date.toDateString())
-                 // {
-                 //     date = today
-                 // }
-                 // else
-                 // {
-                 //     // a timex record wasn't closed
-                 //     date.setHours(24, 0, 0, 0)
-                 // }
-                 // report[ap] += (date - st) / 1000;
                  report[ap] += getDurationOfActiveProject(date, st)
                  console.log('Active project ' + projectName + ': ' + report[ap]);
              }
@@ -656,7 +642,6 @@ function createReport(startDate, endDate)
          $('#reportListView').listview('refresh');
          
          json = JSON.stringify(reportWithDurations);
-         console.log(json);
          document.getElementById('downloadReportAsJSON').href="data:application/json," + json;
          document.getElementById('downloadReportAsJSON').download = 'Timex_' + startDate + "_" + endDate + ".jsn";
      } 
@@ -726,8 +711,7 @@ function storeTimex(forDate, oncomplete)
         }
 
         request.onerror = function(e) {
-            console.log("Error",e.target.error.name);
-            //some type of error handler
+            console.log("Error writing timex data for " + date, e.target.error.name);
         }
 
         request.onsuccess = function(e) {
@@ -844,18 +828,25 @@ $(document).off('click', '#importDataButton').on('click', '#importDataButton', f
             date = new Date(key)
             if (!date || formatDate(date) != key) 
             {
-                console.log('ignoring ' + key);
                 continue;
             }
             var imported = {}
             for (var p in json[key])
             {
                 imported[p] = {}
-                imported[p]['duration'] = durationToSeconds(json[key][p])
-                imported[p]['name'] = p
+                var value = json[key][p]
+                if($.type(value) === "string")
+                {
+                    var dur = durationToSeconds(value);
+                    if (isNaN(dur)) dur = 0;
+                    imported[p]['duration'] = dur;
+                    imported[p]['name'] = p;
+                }
             }
-            console.log('updating ' + key + ' with value ' + JSON.stringify(imported))
-            storeEditedTimex(key, imported)
+            if (!$.isEmptyObject(imported))
+            {
+                storeEditedTimex(key, imported)
+            }
         }
             
     }
