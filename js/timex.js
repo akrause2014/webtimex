@@ -655,10 +655,7 @@ function createReport(startDate, endDate)
          var json = JSON.stringify(reportWithDurations);
          var blob = new Blob([json], {type: "application/json"});
          var url  = URL.createObjectURL(blob);
-         console.log(url)
-         console.log(blob)
          document.getElementById('downloadReportAsJSON').href=url
-         // document.getElementById('downloadReportAsJSON').href="data:application/json," + json;
          document.getElementById('downloadReportAsJSON').download = 'Timex_' + startDate + "_" + endDate + ".jsn";
      } 
 }
