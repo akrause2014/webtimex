@@ -16,6 +16,11 @@ function formatDate(date)
     return date.getFullYear() + '-' + pretty_time_string(date.getMonth()+1) + '-' + pretty_time_string(date.getDate())
 }
 
+function formatProjectName(projectName)
+{
+    return projectName.split(" ").join("_");
+}
+
 function durationToSeconds(s)
 {
     var parts = s.split(":");
@@ -163,14 +168,15 @@ function createDatePicker(dpname)
 
 function createProjectListItem(projectName, durationInSeconds, showSeconds)
 {
-    duration = secondsToDuration(durationInSeconds, showSeconds);
+    var projectId = formatProjectName(projectName)
+    var duration = secondsToDuration(durationInSeconds, showSeconds);
     msg =  "<li data-name=\"" + projectName + "\">"
     msg += "<a href=\"#\"><div class=\"ui-grid-a\">"
     msg += "<div class=\"ui-block-a\" style=\"width:60%\">"
     msg += "<div class=\"ui-bar\">" + projectName + "</div>"
     msg += "</div>"
     msg += "<div class=\"ui-block-b\" style=\"width:40%\">"
-    msg += "<div id=\"" + projectName + "-duration\" class=\"ui-bar\">" + duration + "</div>"
+    msg += "<div id=\"" + projectId + "-duration\" class=\"ui-bar\">" + duration + "</div>"
     msg += "</div></div></a></li>"
     return msg
 } 
@@ -209,19 +215,20 @@ function editReset(msg)
 
 function editAddRow(projectName, durationInSeconds)
 {
+    var projectId = formatProjectName(projectName)
     var duration = secondsToDuration(durationInSeconds, false);
     msg =  "<li>"
     msg += "<div class=\"ui-grid-a\">"
     msg += "<div class=\"ui-block-a\" style=\"width:60%\">"
     msg += "<div class=\"ui-bar\">"
     msg += "<div class=\"ui-input-text ui-body-inherit ui-corner-all ui-shadow-inset\">"
-    msg += "<input type=\"text\" value=\"" + projectName + "\" id=\"editProjectName-" + projectName + "\">"
+    msg += "<input type=\"text\" value=\"" + projectName + "\" id=\"editProjectName-" + projectId + "\">"
     msg += "</div>"
     msg += "</div></div>"
     msg += "<div class=\"ui-block-b\" style=\"width:40%\">"
     msg += "<div class=\"ui-bar\">"
     msg += "<div class=\"ui-input-text ui-body-inherit ui-corner-all ui-shadow-inset\">"
-    msg += "<input type=\"time\" value=\"" + duration + "\" id=\"editProjectDuration-" + projectName + "\">"
+    msg += "<input type=\"time\" value=\"" + duration + "\" id=\"editProjectDuration-" + projectId + "\">"
     msg += "</div></div></div></div></li>"
     return msg;
 }
@@ -285,7 +292,8 @@ $(document).bind('pagecreate', '#editProjects', function(evt)
             var msg = '';
             for (projectName in editedProjects)
             {
-                var durationStr = $("#editProjectDuration-" + projectName).val()
+                var projectId = formatProjectName(projectName)
+                var durationStr = $("#editProjectDuration-" + projectId).val()
                 var duration = durationToSeconds(durationStr);
                 if (isNaN(duration))
                 {
@@ -405,15 +413,17 @@ $(document).bind('pagecreate', '#tracker', function(evt)
         prev = activeProject;
         if (prev != null)
         {
-            var duration = $('#' + prev + '-duration').text();
+            var prevId = formatProjectName(prev)
+            var duration = $('#' + prevId + '-duration').text();
             projects[prev]['duration'] = durationToSeconds(duration);
             delete projects[prev]['startTime'];
             console.log('Deactivated ' + prev + ' with duration ' + duration);
         }
         activeProject = $(this).attr('data-name');
+        var activeProjectId = formatProjectName(activeProject)
         projects[activeProject]['startTime'] = new Date
         currentTimeString = secondsToDuration(projects[activeProject]['duration']);
-        $('#' + activeProject + '-duration').text(currentTimeString);
+        $('#' + activeProjectId + '-duration').text(currentTimeString);
         $('#listview li').attr("data-theme", "a").removeClass("ui-btn-up-b").removeClass('ui-btn-hover-b').removeClass('active').addClass("ui-btn-up-c").addClass('ui-btn-hover-c');
         $(this).attr("data-theme", "b").removeClass("ui-btn-up-c").removeClass('ui-btn-hover-c').addClass("ui-btn-up-b").addClass('ui-btn-hover-b').addClass('active');
         console.log("Activated " + activeProject + " with start time " + projects[activeProject]['startTime']);
@@ -560,7 +570,8 @@ function setActiveDuration()
     var total_seconds = (new Date - start) / 1000;  
     if (isNaN(total_seconds) || isNaN(duration)) return; 
     var currentTimeString = secondsToDuration(total_seconds + duration)
-    $('#' + activeProject + '-duration').text(currentTimeString);
+    var activeProjectId = formatProjectName(activeProject)
+    $('#' + activeProjectId + '-duration').text(currentTimeString);
 }
 
 function addProject(projectName) 
@@ -641,8 +652,13 @@ function createReport(startDate, endDate)
          $('#reportListView').append(msg);
          $('#reportListView').listview('refresh');
          
-         json = JSON.stringify(reportWithDurations);
-         document.getElementById('downloadReportAsJSON').href="data:application/json," + json;
+         var json = JSON.stringify(reportWithDurations);
+         var blob = new Blob([json], {type: "application/json"});
+         var url  = URL.createObjectURL(blob);
+         console.log(url)
+         console.log(blob)
+         document.getElementById('downloadReportAsJSON').href=url
+         // document.getElementById('downloadReportAsJSON').href="data:application/json," + json;
          document.getElementById('downloadReportAsJSON').download = 'Timex_' + startDate + "_" + endDate + ".jsn";
      } 
 }
