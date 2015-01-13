@@ -147,13 +147,13 @@
 <div data-role="page" id="editProjects" data-title="Timex">
 
 	<div data-role="header">
-		<a href="#tracker" class="ui-btn ui-btn-icon-left ui-icon-carat-l" data-transition="slide" data-direction="reverse">Tracker</a>
+		<a href="#tracker" id="editReturnToTracker" class="ui-btn ui-btn-icon-left ui-icon-carat-l" data-transition="slide" data-direction="reverse">Tracker</a>
 		<h1>Edit</h1>
 	</div><!-- /header -->
 
 	<div role="main" class="ui-content">
         <div>
-            <div>Enter a date (format YYYY-MM-DD). <i>Note: Before editing today's times you must pause the tracker.</i></div>
+            <div>Enter a date (format YYYY-MM-DD).</div>
             
             <!--<div><input type="text" type="date" id="editDate"></div>-->
             <div class="ui-grid-b">
@@ -174,8 +174,10 @@
             <input id="editSaveButton" data-inline="true" value="Save" type="button" disabled=""></input>
             <input id="editCancelButton" data-inline="true" value="Cancel" type="button"></input>
         </div>
+        <ul data-role="listview" data-inset="true" data-icon="false" id="editMessage">
+        </ul>
+        
         <ul data-role="listview" data-inset="true" data-icon="false" id="editListView">
-           <li data-role="list-divider"><h2>Please select a date.<h2></li>
         </ul>
         <form>
             <label for="editAddProjectText">Add a project:</label>

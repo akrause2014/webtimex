@@ -4,7 +4,6 @@ var db;
 
 var editedProjects = {}
 var editedDate = null;
-// var todaysDataChanged = false;
 
 function pretty_time_string(num) 
 {
@@ -200,17 +199,10 @@ function indexedDBOk() {
 
 function editReset(msg)
 {
-    $('#editListView').empty().append("<li data-role=\"list-divider\"><h2>" + msg + "<h2></li>");
-    if(typeof $('#editListView').listview() !== "undefined")
-        $('#editListView').listview('refresh');
-    // $('#editDate').datepicker('setDate', '');
+    $('#editMessage').empty().append("<li data-role=\"list-divider\"><h2>" + msg + "<h2></li>");
+    if(typeof $('#editMessage').listview() !== "undefined")
+        $('#editMessage').listview('refresh');
     $('#editAddProjectText').val('');
-    if(typeof $('#editSaveButton').button() !== "undefined")
-        $('#editSaveButton').button('disable');
-    if(typeof $('#editAddProjectButton').button() !== "undefined")
-        $('#editAddProjectButton').button('disable');
-    if(typeof $('#editAddProjectText').textinput() !== "undefined")
-        $('#editAddProjectText').textinput('disable');
 }
 
 function editAddRow(projectName, durationInSeconds)
@@ -235,16 +227,29 @@ function editAddRow(projectName, durationInSeconds)
 
 function loadEditDate()
 {   
+    $('#editListView').empty().append(createProjectListHeader());
+    $('#editListView').listview('refresh');
+    
     var date = $('#editDate').val()
     var dateFormat = new RegExp("^\\d\\d\\d\\d-\\d\\d-\\d\\d$")
     if (!dateFormat.test(date) || isNaN(Date.parse(date)) || formatDate(new Date(date)) != date)
     {
         // not a valid date - ignore
+        $('#editMessage').empty().append("<li data-role=\"list-divider\"><h2>Invalid date.<h2></li>");
+        $('#editMessage').listview('refresh');
+        
         $('#editAddProjectButton').button('disable');
         $('#editSaveButton').button('disable');
+        $('#editCancelButton').button('disable');
         $('#editAddProjectText').textinput('disable');
         return;
     }
+    else
+    {
+        $('#editMessage').empty();
+        $('#editMessage').listview('refresh');
+    }
+    
     editedDate = date
     console.log("Selected date: " + editedDate);
     editedProjects = {}
@@ -252,8 +257,6 @@ function loadEditDate()
     var store = indexTransaction.objectStore("timex");
     var index = store.index("date");
     var range = IDBKeyRange.only(date);
-    $('#editListView').empty().append(createProjectListHeader());
-    $('#editListView').listview('refresh');
     index.openCursor(range).onsuccess = function(evt) {
         var cursor = evt.target.result;
         if (cursor) {
@@ -276,6 +279,7 @@ function loadEditDate()
         }
         $('#editAddProjectButton').button('enable');
         $('#editSaveButton').button('enable');
+        $('#editCancelButton').button('enable');
         $('#editAddProjectText').textinput('enable');
     };  
 }
@@ -309,7 +313,8 @@ $(document).bind('pagecreate', '#editProjects', function(evt)
         }
     });    
     $(document).off('click', '#editCancelButton').on('click', '#editCancelButton', function(){
-        console.log('Cancelling edit.')
+        // console.log('Cancelling edit.')
+        loadEditDate();
         editReset('Cancelled.');
     });
     $(document).off('click', '#editAddProjectButton').on('click', '#editAddProjectButton', function(e) {
@@ -356,6 +361,7 @@ $(document).bind('pagecreate', '#editProjects', function(evt)
     $(document).off('change', '#editDate').on('change', '#editDate', function(){
         loadEditDate();
     });
+    
     // not sure below should be on ... a lot of loading all the time
     // $(document).off('input', '#editDate').on('input', '#editDate', function(){
     //     loadEditDate();
@@ -529,12 +535,6 @@ $(document).bind('pagecreate', '#tracker', function(evt)
 });
 
 $(document).on('pagebeforeshow', '#tracker', function(){
-    // if (db !== undefined && todaysDataChanged)
-    // {
-    //     readProjects();
-    //     todaysDataChanged = false;
-    // }
-    // setActiveDuration()
     startTimer();
 });
 
@@ -549,6 +549,7 @@ var timerHandler = {
 function startTimer()
 {
     if (timerHandler.timer1 != null) return;
+    setActiveDuration();
     // console.log('Start timer')
     timerHandler.timer1 = setInterval(function () {
         setActiveDuration()
@@ -772,7 +773,7 @@ function storeEditedTimex(date, editedProjects)
     }
     
     transaction.oncomplete = function(e) {
-        if (date == formatDate(new Date)) 
+        if (date == formatDate(new Date))
         {
             // console.log('Data for today was edited - reloading timex table');
             readProjects();
