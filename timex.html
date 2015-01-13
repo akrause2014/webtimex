@@ -20,7 +20,7 @@
 
 <body>
 
-<div data-role="page" id="tracker">
+<div data-role="page" id="tracker" data-title="Timex">
 
 	<div data-role="header" id="trackerHeader">
         <a href="#documentation" class="ui-btn ui-icon-info ui-btn-icon-notext ui-btn-left ui-corner-all" data-transition="slide" data-direction="reverse"></a>
@@ -89,7 +89,7 @@
 </div><!-- /page -->
 
 <!-- Start of second page -->
-<div data-role="page" id="report">
+<div data-role="page" id="report" data-title="Timex">
 
 	<div data-role="header">
 		<a href="#tracker" class="ui-btn ui-btn-icon-left ui-icon-carat-l" data-transition="slide" data-direction="reverse">Tracker</a>
@@ -117,7 +117,7 @@
 
 </div><!-- /page -->
 
-<div data-role="page" id="reportResult">
+<div data-role="page" id="reportResult" data-title="Timex">
 
 	<div data-role="header">
 		<a href="#report" class="ui-btn ui-btn-icon-left ui-icon-carat-l" data-transition="slide" data-direction="reverse">Report</a>
@@ -144,7 +144,7 @@
 
 </div>
 
-<div data-role="page" id="editProjects">
+<div data-role="page" id="editProjects" data-title="Timex">
 
 	<div data-role="header">
 		<a href="#tracker" class="ui-btn ui-btn-icon-left ui-icon-carat-l" data-transition="slide" data-direction="reverse">Tracker</a>
@@ -186,7 +186,7 @@
 
 </div>
 
-<div data-role="page" id="allRecords">
+<div data-role="page" id="allRecords" data-title="Timex">
     <div data-role="main" class="ui-content">
         <div>
             <a id="downloadDatabaseAsJSON" class="ui-btn ui-shadow">Download as JSON</a>
@@ -197,7 +197,7 @@
     </div>
 </div>
 
-<div data-role="page" id="database">
+<div data-role="page" id="database" data-title="Timex">
 	<div data-role="header">
 		<a href="#tracker" class="ui-btn ui-btn-icon-left ui-icon-carat-l" data-transition="slide" data-direction="reverse">Tracker</a>
 		<h1>Timex Database</h1>
@@ -230,7 +230,7 @@
     </div>
 </div>
 
-<div data-role="page" id="documentation">
+<div data-role="page" id="documentation" data-title="Timex">
     <div data-role="header">
         <h1>Documentation</h1>
         <a href="#tracker" class="ui-btn ui-btn-right ui-icon-home ui-btn-icon-notext" data-transition="slide">Tracker</a>
@@ -245,13 +245,14 @@
             To activate a project select it in the list. 
             To pause the active project use the "Pause" button.
             An active project is restored when the browser window is closed and reopened or the page is reloaded.
+            <i>The project keeps tracking the time even when the window is closed.</i>
         </p>
         <p>
             To delete a project click on the project in the list and select "Delete Selected" from the menu.
             This deletes the data of the selected project for today.
         </p>
         <p>
-            At the end of the day it is important to stop the activity by pressing the "Stop" button.
+            At the end of the day it is important to stop the activity by pressing the "Pause" button.
             This completes the day and stores the record. 
             Otherwise the selected project remains active - 
             <i>closing the window does not stop the tracker.</i>
@@ -260,13 +261,16 @@
             The timex data is stored locally in the browser. 
             You cannot see the data from another browser, nor can anyone else access your data.
             If accessing the page from another browser a new empty data store is created.
-            See <i>Database</i> below for synchronising the contents of the data store with another instance.
+            See <i>Data Store</i> below for synchronising the contents of the data store with another instance.
         </p>
         <h3>Editing</h3>
         <p>
             It is possible to edit the existing records. Select "Edit data" from the menu.
             Enter the date or use the buttons next to the text input to move to the next or previous day of the current date.
             Click "Load" to load the timex data for the selected day into the table. Click "Save" to update the record, or "Cancel".
+        </p>
+        <p>
+            After editing today's times the previously active project has to be reactivated.
         </p>
         <h3>Report</h3>
         <p>
@@ -275,7 +279,7 @@
             Or select one of the date ranges below, for last week or last month for example.
             The report can be saved as a JSON file.
         </p>
-        <h3>Data</h3>
+        <h3>Data Store</h3>
         <p>
             To synchronise the timex store with another instance the contents of the data store can be 
             dumped to a JSON file.
