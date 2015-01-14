@@ -123,7 +123,11 @@ function readProjects()
         {
             var duration = projects[projectName]['duration']
             // catch any malformatted database entries
-            if (isNaN(duration)) duration = 0;
+            if (isNaN(duration)) 
+            {
+                duration = 0;
+                projects[projectName]['duration'] = 0;
+            }
             total_duration += duration
             console.log('Setting ' + projectName + " with duration " + secondsToDuration(duration))
             $('#listview').append(createProjectListItem(projectName, duration));
@@ -132,8 +136,8 @@ function readProjects()
         }
         // $('#listview').append("<li data-role=\"list-divider\"></li>")
         // $('#listview').append(createProjectListItem("Total", total_duration));
-        if(typeof $('#listview').listview() !== "undefined")
-            $('#listview').listview('refresh');
+        // if(typeof $('#listview').listview() !== "undefined")
+        //     $('#listview').listview('refresh');
         if (date == lastDate)
         {
             var startTime = lastDateRecord['startTime'];
@@ -143,9 +147,10 @@ function readProjects()
                 activeProject = actProj;
                 console.log("Active project is " + actProj + " with start time: " + startTime);
                 projects[activeProject]['startTime'] = startTime;
+                var activeProjectId = formatProjectName(activeProject)
                 var total_seconds = (new Date - startTime) / 1000;
                 currentTimeString = secondsToDuration(total_seconds + projects[activeProject]['duration']);
-                $('#' + activeProject + '-duration').text(currentTimeString);
+                $('#' + activeProjectId + '-duration').text(currentTimeString);
                 if(typeof $('#stopTrackerButton').button() !== "undefined")
                     $('#stopTrackerButton').button('enable');
                 
@@ -415,13 +420,15 @@ $(document).bind('pagecreate', '#tracker', function(evt)
     }
     
     $(document).off('click', '#listview li').on('click', '#listview li', function(){
-    // $('#listview').on('click', 'li', function() {
         prev = activeProject;
         if (prev != null)
         {
-            var prevId = formatProjectName(prev)
-            var duration = $('#' + prevId + '-duration').text();
-            projects[prev]['duration'] = durationToSeconds(duration);
+            // var prevId = formatProjectName(prev)
+            // var duration = $('#' + prevId + '-duration').text();
+            var duration = (new Date - projects[prev]['startTime']) / 1000;
+            // if startTime wasn't set for some reason ...
+            if (isNaN(duration)) duration = 0;
+            projects[prev]['duration'] = duration + projects[prev]['duration'];
             delete projects[prev]['startTime'];
             console.log('Deactivated ' + prev + ' with duration ' + duration);
         }
@@ -469,10 +476,14 @@ $(document).bind('pagecreate', '#tracker', function(evt)
     $(document).off('click', '#stopTrackerButton').on('click', '#stopTrackerButton', function(){
         if (activeProject != null)
         {
-            var duration = $('#' + activeProject + '-duration').text();
-            projects[activeProject]['duration'] = durationToSeconds(duration);
+            var duration = (new Date - projects[activeProject]['startTime']) / 1000;
+            projects[activeProject]['duration'] = duration + projects[activeProject]['duration'];
             delete projects[activeProject]['startTime'];
             console.log('Deactivated ' + activeProject + ' with duration ' + duration);
+            // var duration = $('#' + activeProject + '-duration').text();
+            // projects[activeProject]['duration'] = durationToSeconds(duration);
+            // delete projects[activeProject]['startTime'];
+            // console.log('Deactivated ' + activeProject + ' with duration ' + duration);
             $('#listview').find('li[data-name=\"' + activeProject + '\"]').attr("data-theme", "a").attr("data-theme", "a").removeClass('active');
             activeProject = null;
             storeTimex(new Date);
@@ -746,6 +757,13 @@ function storeEditedTimex(date, editedProjects)
     var timexRecord = {
         'date' : date,
         'projects' : editedProjects
+    }
+
+    if (activeProject != null && formatDate(new Date) == date)
+    {
+        console.log('Setting active project ' + activeProject)
+        timexRecord['activeProject'] = activeProject;
+        timexRecord['startTime'] = new Date
     }
     
     for (var projectName in editedProjects )
