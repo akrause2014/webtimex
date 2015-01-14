@@ -1,11 +1,10 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title>Timex</title>
+    <title>Timex</title>
 
-	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<link rel="stylesheet" href="jquery.mobile-1.4.5/jquery.mobile-1.4.5.min.css" />
-    <link rel="stylesheet" href="js/jquery.mobile.datepicker.css"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="jquery.mobile-1.4.5/jquery.mobile-1.4.5.min.css" />
     <style>
     #listview li.active a {
         background: lightyellow !important;
@@ -14,7 +13,64 @@
     <script src="http://code.jquery.com/jquery-1.11.2.js"></script>
     <script src="jquery.mobile-1.4.5/jquery.mobile-1.4.5.min.js"></script>
     <script src="js/jquery.ui.datepicker.js"></script>
-    <script id="mobile-datepicker" src="js/jquery.mobile.datepicker.js"></script>
+    
+    <script>
+    /*
+     * jQuery Mobile: jQuery UI Datepicker Monkey Patch
+     * http://salman-w.blogspot.com/2014/03/jquery-ui-datepicker-for-jquery-mobile.html
+     */
+    (function() {
+        // use a jQuery Mobile icon on trigger button
+        $.datepicker._triggerClass += " ui-btn ui-btn-right ui-icon-carat-d ui-btn-icon-notext ui-corner-all";
+        // replace jQuery UI CSS classes with jQuery Mobile CSS classes in the generated HTML
+        $.datepicker._generateHTML_old = $.datepicker._generateHTML;
+        $.datepicker._generateHTML = function(inst) {
+            return $("<div></div>").html(this._generateHTML_old(inst))
+                .find(".ui-datepicker-header").removeClass("ui-widget-header ui-helper-clearfix").addClass("ui-bar-inherit").end()
+                .find(".ui-datepicker-prev").addClass("ui-btn ui-btn-left ui-icon-carat-l ui-btn-icon-notext").end()
+                .find(".ui-datepicker-next").addClass("ui-btn ui-btn-right ui-icon-carat-r ui-btn-icon-notext").end()
+                .find(".ui-icon.ui-icon-circle-triangle-e, .ui-icon.ui-icon-circle-triangle-w").replaceWith(function() { return this.childNodes; }).end()
+                .find("span.ui-state-default").removeClass("ui-state-default").addClass("ui-btn").end()
+                .find("a.ui-state-default.ui-state-active").removeClass("ui-state-default ui-state-highlight ui-priority-secondary ui-state-active").addClass("ui-btn ui-btn-active").end()
+                .find("a.ui-state-default").removeClass("ui-state-default ui-state-highlight ui-priority-secondary").addClass("ui-btn").end()
+                .find(".ui-datepicker-buttonpane").removeClass("ui-widget-content").end()
+                .find(".ui-datepicker-current").removeClass("ui-state-default ui-priority-secondary").addClass("ui-btn ui-btn-inline ui-mini").end()
+                .find(".ui-datepicker-close").removeClass("ui-state-default ui-priority-primary").addClass("ui-btn ui-btn-inline ui-mini").end()
+                .html();
+        };
+        // replace jQuery UI CSS classes with jQuery Mobile CSS classes on the datepicker div, unbind mouseover and mouseout events on the datepicker div
+        $.datepicker._newInst_old = $.datepicker._newInst;
+        $.datepicker._newInst = function(target, inline) {
+            var inst = this._newInst_old(target, inline);
+            if (inst.dpDiv.hasClass("ui-widget")) {
+                inst.dpDiv.removeClass("ui-widget ui-widget-content ui-helper-clearfix").addClass(inline ? "ui-content" : "ui-content ui-overlay-shadow ui-body-a").unbind("mouseover mouseout");
+            }
+            return inst;
+        };
+    })();
+    </script>
+    <style>
+    .demo-info { margin: 0.8em 0 0; font-size: 1em; }
+    .ui-datepicker { display: none; }
+    /* set height and left/right margin to accomodate prev/next icons */
+    .ui-datepicker-header { position: relative; padding: 0.3125em 2.0625em; line-height: 1.75em; text-align: center; }
+    .ui-datepicker-header .ui-btn { margin: -1px 0 0 0; }
+    /* fixed width layout for calendar; cells are fixed width */
+    .ui-datepicker-calendar { border-collapse: collapse; line-height: 2; }
+    .ui-datepicker-calendar .ui-btn { margin: 0; padding: 0; width: 2em; line-height: inherit; }
+    .ui-datepicker-today .ui-btn { text-decoration: underline !important; }
+    .ui-datepicker-days-cell-over .ui-btn { border-color: inherit !important; }
+    .ui-datepicker-buttonpane .ui-btn { float: left; margin: 0.5em 0 0; padding: 0.5em 1em; }
+    .ui-datepicker-buttonpane .ui-btn:last-child { float: right; }
+    /* class that can be added to datepicker <input> element's wrapper; makes room for trigger button */
+    .dp-input-button-wrap { position: relative; padding-right: 2.5em; }
+    .dp-input-button-wrap .ui-btn { top: 0.1875em; margin: 0; }
+    /* jQM framework wraps popup content inside a div with the ID <div-id>-popup */
+    #dp-fullsize-popup { width: 80%; }
+    /* fluid width layout for calendar; table is 100% wide; cells size automatically */
+    .ui-datepicker-inline .ui-datepicker-calendar { width: 100%; }
+    .ui-datepicker-inline .ui-datepicker-calendar .ui-btn { width: auto; }
+    </style>
     
     <script src="js/timex.js"></script>
 
@@ -22,11 +78,11 @@
 
 <div data-role="page" id="tracker" data-title="Timex">
 
-	<div data-role="header" id="trackerHeader">
+    <div data-role="header" id="trackerHeader">
         <a href="#documentation" class="ui-btn ui-icon-info ui-btn-icon-notext ui-btn-left ui-corner-all" data-transition="slide" data-direction="reverse"></a>
         <h2><div id="tracker_date"></div></h2>
         <a href="#menu" class="ui-btn ui-icon-bars ui-btn-icon-notext ui-btn-right ui-corner-all"></a>
-	</div><!-- /header -->
+    </div><!-- /header -->
   
     <div data-role="panel" id="menu" data-display="overlay" data-position="right" >
         <div class="ui-corner-all custom-corners">
@@ -91,12 +147,12 @@
 <!-- Start of second page -->
 <div data-role="page" id="report" data-title="Timex">
 
-	<div data-role="header">
-		<a href="#tracker" class="ui-btn ui-btn-icon-left ui-icon-carat-l" data-transition="slide" data-direction="reverse">Tracker</a>
-		<h1>Create Report</h1>
-	</div><!-- /header -->
+    <div data-role="header">
+        <a href="#tracker" class="ui-btn ui-btn-icon-left ui-icon-carat-l" data-transition="slide" data-direction="reverse">Tracker</a>
+        <h1>Create Report</h1>
+    </div><!-- /header -->
 
-	<div role="main" class="ui-content">
+    <div role="main" class="ui-content">
         
         <h3>Select a date range:</h3>
         <div>
@@ -119,12 +175,12 @@
 
 <div data-role="page" id="reportResult" data-title="Timex">
 
-	<div data-role="header">
-		<a href="#report" class="ui-btn ui-btn-icon-left ui-icon-carat-l" data-transition="slide" data-direction="reverse">Report</a>
-		<h1 id="report_date_range">Report</h1>
-	</div><!-- /header -->
+    <div data-role="header">
+        <a href="#report" class="ui-btn ui-btn-icon-left ui-icon-carat-l" data-transition="slide" data-direction="reverse">Report</a>
+        <h1 id="report_date_range">Report</h1>
+    </div><!-- /header -->
 
-	<div role="main" class="ui-content">
+    <div role="main" class="ui-content">
         
         <ul data-role="listview" data-inset="true" data-icon="false" id="reportListView">
             <li>
@@ -146,12 +202,12 @@
 
 <div data-role="page" id="editProjects" data-title="Timex">
 
-	<div data-role="header">
-		<a href="#tracker" id="editReturnToTracker" class="ui-btn ui-btn-icon-left ui-icon-carat-l" data-transition="slide" data-direction="reverse">Tracker</a>
-		<h1>Edit</h1>
-	</div><!-- /header -->
+    <div data-role="header">
+        <a href="#tracker" id="editReturnToTracker" class="ui-btn ui-btn-icon-left ui-icon-carat-l" data-transition="slide" data-direction="reverse">Tracker</a>
+        <h1>Edit</h1>
+    </div><!-- /header -->
 
-	<div role="main" class="ui-content">
+    <div role="main" class="ui-content">
         <div>
             <div>Enter a date (format YYYY-MM-DD).</div>
             
@@ -200,10 +256,10 @@
 </div>
 
 <div data-role="page" id="database" data-title="Timex">
-	<div data-role="header">
-		<a href="#tracker" class="ui-btn ui-btn-icon-left ui-icon-carat-l" data-transition="slide" data-direction="reverse">Tracker</a>
-		<h1>Timex Database</h1>
-	</div><!-- /header -->
+    <div data-role="header">
+        <a href="#tracker" class="ui-btn ui-btn-icon-left ui-icon-carat-l" data-transition="slide" data-direction="reverse">Tracker</a>
+        <h1>Timex Database</h1>
+    </div><!-- /header -->
 
     <div data-role="main" class="ui-content">
 

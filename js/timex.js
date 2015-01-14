@@ -163,11 +163,12 @@ function readProjects()
 
 function createDatePicker(dpname)
 {
-    $(dpname).datepicker("option", "dateFormat", "yy/mm/dd")
-    $(dpname).datepicker("option", "firstDay", 1)
-    $(dpname).datepicker("option", "defaultDate", new Date())
+    $(dpname).datepicker({
+        'dateFormat' : 'yy-mm-dd',
+        'firstDay' : 1,
+        'showButtonPanel' : true
+    });
     $(dpname).datepicker("setDate", new Date())
-    $(dpname).datepicker("option", "showButtonPanel", true)
 }
 
 function createProjectListItem(projectName, durationInSeconds, showSeconds)
@@ -378,6 +379,11 @@ $(document).on('pagebeforeshow', '#editProjects', function(){
 });
 
 
+$(document).bind('pagecreate', '#report', function(evt) {
+    createDatePicker('#startDate');
+    createDatePicker('#endDate')
+});
+
 $(document).bind('pagecreate', '#tracker', function(evt) 
 {
     var today = new Date   
@@ -492,14 +498,10 @@ $(document).bind('pagecreate', '#tracker', function(evt)
         }
     });
     $(document).off('click', '#reportSubmitButton').on('click', '#reportSubmitButton', function(){
-        sv = $('#startDate').val();
-        ev = $('#endDate').val();
-        if (sv && ev)
+        var startDate = $('#startDate').val();
+        var endDate = $('#endDate').val();
+        if (startDate && endDate)
         {
-            s = sv.split('/');
-            e = ev.split('/');
-            startDate = s[2] + '-' + s[0] + '-' + s[1];
-            endDate = e[2] + '-' + e[0] + '-' + e[1];
             createReport(startDate, endDate);
         }
     });
