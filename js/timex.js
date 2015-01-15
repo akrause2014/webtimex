@@ -319,9 +319,8 @@ $(document).bind('pagecreate', '#editProjects', function(evt)
         }
     });    
     $(document).off('click', '#editCancelButton').on('click', '#editCancelButton', function(){
-        // console.log('Cancelling edit.')
         loadEditDate();
-        editReset('Cancelled.');
+        editReset('Reloaded data for ' + $('#editDate').val());
     });
     $(document).off('click', '#editAddProjectButton').on('click', '#editAddProjectButton', function(e) {
         var projectName = $('#editAddProjectText').val();
@@ -377,7 +376,9 @@ $(document).bind('pagecreate', '#editProjects', function(evt)
 $(document).on('pagebeforeshow', '#editProjects', function(){
     if (db !== undefined) loadEditDate();
 });
-
+$(document).off('pagecreate', '#editProjects').on('pagecreate', '#editProjects', function(){
+    createDatePicker('#editDate');
+});
 
 $(document).bind('pagecreate', '#report', function(evt) {
     createDatePicker('#startDate');
