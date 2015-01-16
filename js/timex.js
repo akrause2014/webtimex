@@ -137,10 +137,12 @@ function readProjects()
             if(typeof $('#listview').listview() !== "undefined")
                 $('#listview').listview('refresh');
         }
+        
         // $('#listview').append("<li data-role=\"list-divider\"></li>")
-        // $('#listview').append(createProjectListItem("Total", total_duration));
+        // $('#listview').append(createProjectListItem("Total", total_duration, false));
         // if(typeof $('#listview').listview() !== "undefined")
         //     $('#listview').listview('refresh');
+        
         if (date == lastDate)
         {
             var startTime = lastDateRecord['startTime'];
@@ -443,8 +445,14 @@ $(document).bind('pagecreate', '#tracker', function(evt)
             console.log('Deactivated ' + prev + ' with duration ' + duration);
         }
         activeProject = $(this).attr('data-name');
+        try {
+            projects[activeProject]['startTime'] = new Date
+        }
+        catch (ex)
+        {
+            return;
+        }
         var activeProjectId = formatProjectName(activeProject)
-        projects[activeProject]['startTime'] = new Date
         currentTimeString = secondsToDuration(projects[activeProject]['duration']);
         $('#' + activeProjectId + '-duration').text(currentTimeString);
         $('#listview li').attr("data-theme", "a").removeClass("ui-btn-up-b").removeClass('ui-btn-hover-b').removeClass('active').addClass("ui-btn-up-c").addClass('ui-btn-hover-c');
@@ -473,6 +481,11 @@ $(document).bind('pagecreate', '#tracker', function(evt)
         if (projectName in projects)
         {
             alert('Project "' + projectName + '" already exists.');
+            return;
+        }
+        if (projectName.indexOf('"') >= 0)
+        {
+            alert('Project name contains invalid characters: "');
             return;
         }
         msg = createProjectListItem(projectName, 0);
@@ -567,6 +580,7 @@ function startTimer()
 {
     if (timerHandler.timer1 != null) return;
     setActiveDuration();
+    // setTotalDuration();
     // console.log('Start timer')
     timerHandler.timer1 = setInterval(function () {
         setActiveDuration()
