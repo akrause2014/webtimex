@@ -17,7 +17,10 @@ function formatDate(date)
 
 function formatProjectName(projectName)
 {
-    return projectName.split(" ").join("_").split(":").join("_");
+    // replaces all invalid characters by an underscore (_) 
+    // might be an issue if using project names that differ only in a special character
+    // TODO use seperate IDs for projects rather than some escaped name
+    return projectName.replace(/[!\"#$%&'()*+,./:;<=>?@[\]^`{|}~ £]/g, '_');
 }
 
 function durationToSeconds(s)
