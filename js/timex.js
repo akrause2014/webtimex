@@ -435,8 +435,12 @@ $(document).bind('pagecreate', '#tracker', function(evt)
         prev = activeProject;
         if (prev != null)
         {
-            // var prevId = formatProjectName(prev)
-            // var duration = $('#' + prevId + '-duration').text();
+            if (!(prev in projects))
+            {
+                // something is very wrong
+                console.log('Cannot find active project ' + prev + ' for deactivation!');
+                return;
+            }
             var duration = (new Date - projects[prev]['startTime']) / 1000;
             // if startTime wasn't set for some reason ...
             if (isNaN(duration)) duration = 0;
@@ -445,13 +449,13 @@ $(document).bind('pagecreate', '#tracker', function(evt)
             console.log('Deactivated ' + prev + ' with duration ' + duration);
         }
         activeProject = $(this).attr('data-name');
-        try {
-            projects[activeProject]['startTime'] = new Date
-        }
-        catch (ex)
+        if (!(activeProject in projects))
         {
+            // something is very wrong...
+            console.log('Cannot find active project ' + activeProject + ' in project list!');
             return;
         }
+        projects[activeProject]['startTime'] = new Date
         var activeProjectId = formatProjectName(activeProject)
         currentTimeString = secondsToDuration(projects[activeProject]['duration']);
         $('#' + activeProjectId + '-duration').text(currentTimeString);
