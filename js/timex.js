@@ -17,7 +17,7 @@ function formatDate(date)
 
 function formatProjectName(projectName)
 {
-    return projectName.split(" ").join("_");
+    return projectName.split(" ").join("_").split(":").join("_");
 }
 
 function durationToSeconds(s)
