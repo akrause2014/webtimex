@@ -697,24 +697,9 @@ function createReport(startDate, endDate)
 }
 
 function storeTimex(forDate, oncomplete)
-{ 
-    date = formatDate(forDate);
-
-    // lookup record
-    var indexTransaction = db.transaction(["timex"], "readonly");
-    var store = indexTransaction.objectStore("timex");
-    var index = store.index("date");
-    var timexKey = null;
-    var range = IDBKeyRange.only(date);
-    var request = index.get(date);
-    index.openCursor(range).onsuccess = function(evt) {
-        var cursor = evt.target.result;
-        if (cursor) {
-            timexKey = cursor.primaryKey;
-            cursor.continue();
-        }
-    };
-
+{     
+    var date = formatDate(forDate);
+    
     var timexRecord = {
         'date' : date,
         'projects' : {}
@@ -733,9 +718,26 @@ function storeTimex(forDate, oncomplete)
         }
         timexRecord['projects'][projectName] = project;
     }
+    
+
+    //lookup record
+    var indexTransaction = db.transaction(["timex"], "readonly");
+    var store = indexTransaction.objectStore("timex");
+    var index = store.index("date");
+    var timexKey = null;
+    var range = IDBKeyRange.only(date);
+    var request = index.get(date);
+    index.openCursor(range).onsuccess = function(evt) {
+        var cursor = evt.target.result;
+        if (cursor) {
+            timexKey = cursor.primaryKey;
+            cursor.continue();
+        }
+    };
+
 
     indexTransaction.oncomplete = function(e){
-    
+
         var transaction = db.transaction(["timex"], "readwrite");
         var store = transaction.objectStore("timex");
 
@@ -799,29 +801,63 @@ function storeEditedTimex(date, editedProjects)
         }
     }
 
-    var transaction = db.transaction(["timex"], "readwrite");
-    var store = transaction.objectStore("timex");
+    //lookup record
+    var indexTransaction = db.transaction(["timex"], "readonly");
+    var store = indexTransaction.objectStore("timex");
+    var index = store.index("date");
+    var timexKey = null;
+    var range = IDBKeyRange.only(date);
+    var request = index.get(date);
+    index.openCursor(range).onsuccess = function(evt) {
+        var cursor = evt.target.result;
+        if (cursor) {
+            timexKey = cursor.primaryKey;
+            cursor.continue();
+        }
+    };
+
+    indexTransaction.oncomplete = function(e){
+        var transaction = db.transaction(["timex"], "readwrite");
+        var store = transaction.objectStore("timex");
  
-    var request = store.put(timexRecord);
-
-    request.onerror = function(e) {
-        console.log("Error: Failed to update timex for " + date, e.target.error.name);
-        editReset('Failed to update record for ' + date + '.');
-    }
-
-    request.onsuccess = function(e) {
-        editReset('Updated record for ' + date + '.');
-        console.log('Wrote timex data for ' + date);
-    }
-    
-    transaction.oncomplete = function(e) {
-        if (date == formatDate(new Date))
+        var request;
+        if (timexKey == null)
         {
-            // console.log('Data for today was edited - reloading timex table');
-            readProjects();
+            request = store.put(timexRecord);
+        }
+        else
+        {
+            try
+            {
+                // this works for iOS Safari but not for Chrome...
+                // Safari creates a primary key in addition to the inline key
+                request = store.put(timexRecord, timexKey);
+            }
+            catch(e)
+            {
+                // try again the proper way
+                request = store.put(timexRecord);
+            }
+        }
+
+        request.onerror = function(e) {
+            console.log("Error: Failed to update timex for " + date, e.target.error.name);
+            editReset('Failed to update record for ' + date + '.');
+        }
+
+        request.onsuccess = function(e) {
+            editReset('Updated record for ' + date + '.');
+            console.log('Wrote timex data for ' + date);
+        }
+    
+        transaction.oncomplete = function(e) {
+            if (date == formatDate(new Date))
+            {
+                // console.log('Data for today was edited - reloading timex table');
+                readProjects();
+            }
         }
     }
-        
 }
 
 
