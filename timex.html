@@ -9,6 +9,10 @@
     #listview li.active a {
         background: lightyellow !important;
     }
+    .controlgroup-textinput{
+        padding-top:.22em;
+        padding-bottom:.22em;
+    }
     </style>
     <script src="http://code.jquery.com/jquery-1.11.2.js"></script>
     <script src="jquery.mobile-1.4.5/jquery.mobile-1.4.5.min.js"></script>
@@ -237,8 +241,11 @@
         </ul>
         <form>
             <label for="editAddProjectText">Add a project:</label>
-            <input type="text" disabled="" id="editAddProjectText"></input>
-            <input id="editAddProjectButton" data-inline="true" value="Add Project" type="button" disabled=""></input>
+            <div data-role="controlgroup" data-type="horizontal">
+                <input type="text" disabled="" id="editAddProjectText" data-wrapper-class="controlgroup-textinput ui-btn"></input>
+                <input id="editAddProjectButton" data-inline="true" value="Add Project" type="button" disabled=""></input>
+            </div>
+            <input id="editDeleteAllButton" value="Clear All" type="button"></input>
         </form>
     </div>
 
