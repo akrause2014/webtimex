@@ -121,6 +121,10 @@
             <label for="projectName">Project Name:</label>
             <input id="projectName" value="" data-theme="a" type="text">
         </div>
+        <label for="selectAddAsSubproject" class="select">As sub project of:</label>
+        <select id="selectAddAsSubproject">
+            <option value="None">None</option>
+        </select>
         <div>
             <button id="addProjectButton" class="ui-btn ui-corner-all ui-btn-inline" data-rel="close">Add</button>
             <button id="addProjectButtonCancel" class="ui-btn ui-corner-all ui-btn-inline" data-rel="close">Cancel</button>
@@ -140,6 +144,8 @@
                     </div>
                 </div>
             </li>
+        </ul>
+        <ul data-role="listview" data-inset="true" data-icon="false" id="totalTimeListview">
         </ul>
         <input id="stopTrackerButton" value="Pause" type="button" data-rel="close"></input> 
         

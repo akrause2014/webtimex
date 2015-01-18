@@ -143,12 +143,7 @@ function readProjects()
                 $('#listview').listview('refresh');
             index += 1;
         }
-        
-        // $('#listview').append("<li data-role=\"list-divider\"></li>")
-        // $('#listview').append(createProjectListItem("Total", total_duration, false));
-        // if(typeof $('#listview').listview() !== "undefined")
-        //     $('#listview').listview('refresh');
-        
+
         if (date == lastDate)
         {
             var startTime = lastDateRecord['startTime'];
@@ -160,6 +155,7 @@ function readProjects()
                 projects[activeProject]['startTime'] = startTime;
                 var activeProjectId = projects[activeProject]['index'];
                 var total_seconds = (new Date - startTime) / 1000;
+                total_duration += total_seconds;
                 currentTimeString = secondsToDuration(total_seconds + projects[activeProject]['duration']);
                 $('#duration-' + activeProjectId).text(currentTimeString);
                 if(typeof $('#stopTrackerButton').button() !== "undefined")
@@ -169,6 +165,11 @@ function readProjects()
                 $('#listview').find('li[data-name=\"' + activeProject + '\"]').attr("data-theme", "a").attr("data-theme", "a").addClass('active');
             }
         }
+        
+        $('#totalTimeListview').empty().append(createProjectListItem("Total", "total", total_duration, false));
+        if(typeof $('#totalTimeListview').listview() !== "undefined")
+            $('#totalTimeListview').listview('refresh');
+        
     };
 }
 
@@ -397,7 +398,7 @@ $(document).bind('pagecreate', '#editProjects', function(evt)
     // });
 });
 
-$(document).on('pagebeforeshow', '#editProjects', function(){
+$(document).off('pagebeforeshow', '#editProjects').on('pagebeforeshow', '#editProjects', function(){
     if (db !== undefined) loadEditDate();
 });
 $(document).off('pagecreate', '#editProjects').on('pagecreate', '#editProjects', function(){
@@ -407,6 +408,17 @@ $(document).off('pagecreate', '#editProjects').on('pagecreate', '#editProjects',
 $(document).bind('pagecreate', '#report', function(evt) {
     createDatePicker('#startDate');
     createDatePicker('#endDate')
+});
+
+$(document).off('panelbeforeopen', '#addProject').on('panelbeforeopen', '#addProject', function(){
+    $('#selectAddAsSubproject').empty();
+    $('#selectAddAsSubproject').append("<option value=\"None\">None</option>");
+    for (projectName in projects)
+    {
+        var option = "<option value=\"" + projects[projectName]['index'] + "\">" + projectName + "</option>";
+        $('#selectAddAsSubproject').append(option);
+    }
+    $('#selectAddAsSubproject').selectmenu('refresh');
 });
 
 $(document).bind('pagecreate', '#tracker', function(evt) 
@@ -511,12 +523,28 @@ $(document).bind('pagecreate', '#tracker', function(evt)
             alert('Project name contains invalid characters: "');
             return;
         }
-        console.log("Adding project: " + projectName);
+        var superproject = $('#selectAddAsSubproject').val();
+        var msg = "Adding project: " + projectName;
+        if (superproject != "None") 
+        {
+            var sup = "None";
+            for (p in projects)
+            {
+                if (projects[p]['index'] == superproject) 
+                {
+                    sup = p;
+                    break;
+                }
+            }
+            msg += " as subproject of " + sup;
+        }
+        console.log(msg);
         addProject(projectName);
-        msg = createProjectListItem(projectName, formatProjectName(projectName), 0);
+        msg = createProjectListItem(projectName, projects[projectName]['index'], 0);
         $('#listview').append(msg);
         $('#listview').listview('refresh');
         $('#projectName').val('');
+        $('#selectAddAsSubproject').val('None').selectmenu('refresh');
     });
     
     $(document).off('click', '#stopTrackerButton').on('click', '#stopTrackerButton', function(){
@@ -599,7 +627,6 @@ function startTimer()
 {
     if (timerHandler.timer1 != null) return;
     setActiveDuration();
-    // setTotalDuration();
     // console.log('Start timer')
     timerHandler.timer1 = setInterval(function () {
         setActiveDuration()
@@ -611,6 +638,16 @@ function stopTimer()
     // console.log('Stop timer')
     clearInterval(timerHandler.timer1);
     timerHandler.timer1 = null;
+}
+
+function getTotalDuration()
+{
+    var total_duration = 0;
+    for (projectName in projects)
+    {
+        total_duration += projects[projectName]['duration'];
+    }
+    return total_duration;
 }
 
 function setActiveDuration()
@@ -627,8 +664,10 @@ function setActiveDuration()
     var total_seconds = (new Date - start) / 1000;  
     if (isNaN(total_seconds) || isNaN(duration)) return; 
     var currentTimeString = secondsToDuration(total_seconds + duration)
-    var activeProjectId = formatProjectName(activeProject)
+    var activeProjectId = projects[activeProject]['index'];
     $('#duration-' + activeProjectId).text(currentTimeString);
+    var totalTimeString = secondsToDuration(getTotalDuration() + total_seconds, false);
+    $('#duration-total').text(totalTimeString);
 }
 
 function addProject(projectName) 
