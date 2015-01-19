@@ -410,16 +410,16 @@ $(document).bind('pagecreate', '#report', function(evt) {
     createDatePicker('#endDate')
 });
 
-$(document).off('panelbeforeopen', '#addProject').on('panelbeforeopen', '#addProject', function(){
-    $('#selectAddAsSubproject').empty();
-    $('#selectAddAsSubproject').append("<option value=\"None\">None</option>");
-    for (projectName in projects)
-    {
-        var option = "<option value=\"" + projects[projectName]['index'] + "\">" + projectName + "</option>";
-        $('#selectAddAsSubproject').append(option);
-    }
-    $('#selectAddAsSubproject').selectmenu('refresh');
-});
+// $(document).off('panelbeforeopen', '#addProject').on('panelbeforeopen', '#addProject', function(){
+//     $('#selectAddAsSubproject').empty();
+//     $('#selectAddAsSubproject').append("<option value=\"None\">None</option>");
+//     for (projectName in projects)
+//     {
+//         var option = "<option value=\"" + projects[projectName]['index'] + "\">" + projectName + "</option>";
+//         $('#selectAddAsSubproject').append(option);
+//     }
+//     $('#selectAddAsSubproject').selectmenu('refresh');
+// });
 
 $(document).bind('pagecreate', '#tracker', function(evt) 
 {
@@ -523,28 +523,28 @@ $(document).bind('pagecreate', '#tracker', function(evt)
             alert('Project name contains invalid characters: "');
             return;
         }
-        var superproject = $('#selectAddAsSubproject').val();
-        var msg = "Adding project: " + projectName;
-        if (superproject != "None") 
-        {
-            var sup = "None";
-            for (p in projects)
-            {
-                if (projects[p]['index'] == superproject) 
-                {
-                    sup = p;
-                    break;
-                }
-            }
-            msg += " as subproject of " + sup;
-        }
-        console.log(msg);
+        // var superproject = $('#selectAddAsSubproject').val();
+        // var msg = "Adding project: " + projectName;
+        // if (superproject != "None")
+        // {
+        //     var sup = "None";
+        //     for (p in projects)
+        //     {
+        //         if (projects[p]['index'] == superproject)
+        //         {
+        //             sup = p;
+        //             break;
+        //         }
+        //     }
+        //     msg += " as subproject of " + sup;
+        // }
+        // console.log(msg);
         addProject(projectName);
-        msg = createProjectListItem(projectName, projects[projectName]['index'], 0);
-        $('#listview').append(msg);
-        $('#listview').listview('refresh');
         $('#projectName').val('');
-        $('#selectAddAsSubproject').val('None').selectmenu('refresh');
+        // msg = createProjectListItem(projectName, projects[projectName]['index'], 0);
+        // $('#listview').append(msg);
+        // $('#listview').listview('refresh');
+        // $('#selectAddAsSubproject').val('None').selectmenu('refresh');
     });
     
     $(document).off('click', '#stopTrackerButton').on('click', '#stopTrackerButton', function(){
@@ -679,7 +679,7 @@ function addProject(projectName)
     project['index'] = Object.keys(projects).length;
     projects[projectName] = project;
     console.log("Added project " + name);
-    storeTimex(new Date)
+    storeTimex(new Date, readProjects)
 }
 
 function deleteProject(projectName) 

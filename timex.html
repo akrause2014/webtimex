@@ -121,10 +121,12 @@
             <label for="projectName">Project Name:</label>
             <input id="projectName" value="" data-theme="a" type="text">
         </div>
+        <!--
         <label for="selectAddAsSubproject" class="select">As sub project of:</label>
         <select id="selectAddAsSubproject">
             <option value="None">None</option>
         </select>
+        -->
         <div>
             <button id="addProjectButton" class="ui-btn ui-corner-all ui-btn-inline" data-rel="close">Add</button>
             <button id="addProjectButtonCancel" class="ui-btn ui-corner-all ui-btn-inline" data-rel="close">Cancel</button>
@@ -321,6 +323,7 @@
         <p>
             To delete a project click on the project in the list and select "Delete Selected" from the menu.
             This deletes the data of the selected project for today.
+            It does not remove the project records from any other days in the database. 
         </p>
         <p>
             At the end of the day it is important to stop the activity by pressing the "Pause" button.
