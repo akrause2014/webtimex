@@ -3,7 +3,7 @@ WebTimex
 
 Web version of the project time tracker. Uses HTML5 and IndexedDB.
 
-Tested with Chrome v39, Firefox 34.0.5, Safari iOS 8.
+Tested with Chrome v39.0.2171.99, Firefox 34.0.5, Safari v7.1.2, Safari iOS 8.
 
 Installation
 ------------
