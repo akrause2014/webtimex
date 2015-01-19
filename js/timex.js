@@ -975,15 +975,17 @@ $(document).off('click', '#importDataButton').on('click', '#importDataButton', f
     reader.onload = function(e)
     {
         jsonString = reader.result;
-        console.log('Importing data')
         try {
             json = JSON.parse(jsonString)
         }
         catch (e) {
-            console.log('Could not parse input data as JSON')
+            console.log('Could not parse input data as JSON: ' + e)
+            alert('Import failed. Error when parsing JSON input data:\n' + e);
+            return;
         }
         console.log('Parsed JSON successfully')
-            
+        
+        var numRecords = 0;
         for (var key in json) {
             date = new Date(key)
             if (!date || formatDate(date) != key) 
@@ -1006,9 +1008,11 @@ $(document).off('click', '#importDataButton').on('click', '#importDataButton', f
             if (!$.isEmptyObject(imported))
             {
                 storeEditedTimex(key, imported)
+                numRecords++;
             }
         }
-            
+        console.log('Imported ' + numRecords + ' records into the database.');
+        alert('Imported ' + numRecords + " day(s) into the database.");
     }
     reader.readAsText(file);
 });
