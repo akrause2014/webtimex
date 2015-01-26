@@ -116,7 +116,7 @@
              <a href="#editProjects" class="ui-btn ui-shadow">Edit Data</a>
              <a href="#addProject" data-rel="popup" class="ui-btn ui-shadow">Add Project</a>
              <button id="deleteProjectButton" class="ui-btn ui-shadow" data-rel="close">Delete Selected</button>
-             <a href="#schedule" id="fetchScheduleButton" class="ui-btn ui-shadow">View Schedule</a>
+             <a id="fetchScheduleButton" class="ui-btn ui-shadow">View Schedule</a>
           </div>
         </div>
         <div class="ui-corner-all custom-corners">
@@ -208,22 +208,24 @@
 
     <div role="main" class="ui-content">
         
-        <input type="checkbox" name="checkbox-fetchSchedule" id="checkbox-fetchSchedule">
-        <label for="checkbox-fetchSchedule">Fetch Schedule</label>
-        
         <h3>Select a date range:</h3>
         <div>
             <input type="text" data-role="date" id="startDate">
             <input type="text" data-role="date" id="endDate">
         </div>
-        <a href="#reportResult" id="reportSubmitButton" class="ui-btn" data-transition="slide">Submit</a>
+        <a id="reportSubmitButton" class="ui-btn" data-transition="slide">Submit</a>
 
         <h3>Or select one of the following:</h3>
         <div>
-            <a href="#reportResult" class="ui-btn" id="reportThisWeekButton" data-transition="slide">This Week</a>
-            <a href="#reportResult" class="ui-btn" id="reportLastWeekButton" data-transition="slide">Last Week</a>
-            <a href="#reportResult" class="ui-btn" id="reportThisMonthButton" data-transition="slide">This Month</a>
-            <a href="#reportResult" class="ui-btn" id="reportLastMonthButton" data-transition="slide">Last Month</a>
+            <a class="ui-btn" id="reportThisWeekButton" data-transition="slide">This Week</a>
+            <a class="ui-btn" id="reportLastWeekButton" data-transition="slide">Last Week</a>
+            <a class="ui-btn" id="reportThisMonthButton" data-transition="slide">This Month</a>
+            <a class="ui-btn" id="reportLastMonthButton" data-transition="slide">Last Month</a>
+        </div>
+        
+        <div>
+            <input type="checkbox" name="checkbox-fetchSchedule" id="checkbox-fetchSchedule" class="ui-btn-icon-left">
+            <label for="checkbox-fetchSchedule">Fetch Schedule</label>
         </div>
         
     </div>
@@ -355,6 +357,23 @@
         
 
     </div>
+</div>
+
+<div data-role="page" data-dialog="true" id="login">
+  <div data-role="header">
+    <h1>Login</h1>
+  </div>
+
+  <div data-role="main" class="ui-content">
+      <label for="usernameInput">Username:</label>
+      <input type="text" id="usernameInput"></input>
+      <label for="passwordInput">Password:</label>
+      <input type="password" id="passwordInput"></input>
+      <label for="personidInput">User ID:</label>
+      <input type="text" id="personidInput"></input>
+      <a href="#schedule" class="ui-btn ui-shadow" id="loginButton">Login</a>
+  </div>
+
 </div>
 
 <div data-role="page" id="documentation" data-title="Timex">

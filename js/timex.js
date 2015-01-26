@@ -6,6 +6,15 @@ var editedProjects = {}
 var editedDate = null;
 
 var schedule = {};
+var username = null;
+var personId = null;
+var password = null;
+
+var reportStartDate;
+var reportEndDate;
+var reportCalendarField;
+var reportBlock;
+
 
 function pretty_time_string(num) 
 {
@@ -30,7 +39,9 @@ function durationToSeconds(s)
 {
     var parts = s.split(":");
     var hours = parseInt(parts[0]);
+    if (parts[0] == '--') hours = 0;
     var minutes = parseInt(parts[1]);
+    if (parts[1] == '--') minutes = 0;
     var seconds = 0;
     if (parts.length >= 3)
     {
@@ -77,6 +88,12 @@ function getDurationOfActiveProject(date, startTime)
         date.setHours(24, 0, 0, 0)
     }
     return (date - startTime) / 1000;
+}
+
+function parseDate(input) 
+{
+  var parts = input.split('-');
+  return new Date(parts[0], parts[1]-1, parts[2]);
 }
 
 function readProjects()
@@ -311,16 +328,15 @@ function loadEditDate()
     };  
 }
 
-function fetchScheduleForReport(startDate, endDate, personId, username, password)
-{
-    var date = new Date;
-    var firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
+function fetchScheduleForReport(startDate, endDate, calendarField, block)
+{    
+    var start = parseDate(startDate);
     $.getJSON("http://" + username + ":" + password 
                 + "@localhost:8080/PLANNING/RestServlet/Balance/" 
-                + personId + ":::Person-" + firstDay.getTime() + "-2-1-1")
+                + personId + ":::Person-" + start.getTime() + "-" + calendarField + "-" + block + "-1")
         .fail(function(jqXHR, textStatus, errorThrown) {
             console.log( "Error fetching schedule : " + textStatus + " " + errorThrown );
-            createReport(startDate, endDate);
+            createReport(startDate, endDate, false);
           })
         .done(function(data){
             if (!data['success'] || !data['valid']) return;
@@ -349,8 +365,79 @@ function fetchScheduleForReport(startDate, endDate, personId, username, password
                     });
                 }
             });
-            createReport(startDate, endDate);
+            createReport(startDate, endDate, true);
     });
+}
+
+function viewSchedule()
+{
+    // var personId = 1;
+    var date = new Date;
+    var firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
+    // var username = "test";
+    // var password = "tomcat";
+    $('#scheduleTable tbody').empty();
+    $.getJSON("http://" + username + ":" + password 
+                + "@localhost:8080/PLANNING/RestServlet/Balance/" 
+                + personId + ":::Person-" + firstDay.getTime() + "-2-1-1", 
+        function( data ) {
+            if (!data['success'] || !data['valid']) return;
+            var jsonSchedule = data['Schedule']
+            var totalRow = '';
+            $('#scheduleTable thead').empty();
+            $('#scheduleTable tbody').empty();
+            $('#importProjectsButton').button('enable');
+            var columns;
+            $.each( jsonSchedule, function( key, projSched ) {
+                var projectName = key;
+                var isHeader = (key == "Task");
+                var isFooter = (key == "Total");
+                var rowMsg;
+                if (isHeader)
+                {
+                    columns = projSched;
+                    rowMsg = "<tr data-priority=\"index\"><th>Task</th>";
+                    $.each(projSched, function(index, val) {
+                        rowMsg += '<th>' + val + '</th>'
+                    });
+                    rowMsg += '</tr>'
+                    $('#scheduleTable thead').append(rowMsg);
+                    $('#scheduleTable').table('refresh');
+                }
+                else if (isFooter)
+                {
+                    rowMsg = '<tr><th>' + projectName + '</th>'
+                    $.each(projSched, function(index, val) {
+                        rowMsg += '<th>' + val + '</th>'
+                    });
+                    rowMsg += '</tr>'
+                    totalRow = rowMsg;
+                }
+                else 
+                {
+                    projSchedule = {};
+                    schedule[projectName] = projSchedule;
+                    rowMsg = '<tr><td>' + projectName + '</td>'
+                    $.each(projSched, function(index, val) {
+                        projSchedule[columns[index]] = val;
+                        rowMsg += '<td>' + val + '</td>'
+                    });
+                    rowMsg += '</tr>'
+                    $('#scheduleTable tbody').append(rowMsg);
+                    $('#scheduleTable').table('refresh');
+                }
+                
+            });
+            $('#scheduleTable tbody').append(totalRow);
+            $('#scheduleTable').table('refresh');
+        })
+        .fail(function(jqXHR, textStatus, errorThrown) {
+            console.log( "Error fetching schedule : " + textStatus + " " + errorThrown );
+            $('#scheduleTable tbody').empty();
+            $('#scheduleTable thead').empty();
+            $('#scheduleTable thead').append('<tr><th>Failed to load schedule.</th></tr>');
+            $('#importProjectsButton').button('disable');
+          });
 }
 
 $(document).bind('pagecreate', '#editProjects', function(evt) 
@@ -565,74 +652,29 @@ $(document).bind('pagecreate', '#tracker', function(evt)
             addProjects(importedProjects);
         }
     });
+    $(document).off('click', '#loginButton').on('click', '#loginButton', function(){
+        username = $('#usernameInput').val();
+        personId = $('#personidInput').val();
+        password = $('#passwordInput').val();
+        console.log('login: ' + username + ':' + password + ':' + personId);
+        if ($('#loginButton').attr('href') == '#schedule')
+            viewSchedule();
+        else if ($('#loginButton').attr('href') == '#reportResult')
+        {
+            fetchScheduleForReport(reportStartDate, reportEndDate, reportCalendarField, reportBlock);
+        }
+    });
     $(document).off('click', '#fetchScheduleButton').on('click', '#fetchScheduleButton', function(){
-        var personId = 1;
-        var date = new Date;
-        var firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
-        var username = "test";
-        var password = "tomcat";
-        $('#scheduleTable tbody').empty();
-        $.getJSON("http://" + username + ":" + password 
-                    + "@localhost:8080/PLANNING/RestServlet/Balance/" 
-                    + personId + ":::Person-" + firstDay.getTime() + "-2-1-1", 
-            function( data ) {
-                if (!data['success'] || !data['valid']) return;
-                var jsonSchedule = data['Schedule']
-                var totalRow = '';
-                $('#scheduleTable thead').empty();
-                $('#scheduleTable tbody').empty();
-                $('#importProjectsButton').button('enable');
-                var columns;
-                $.each( jsonSchedule, function( key, projSched ) {
-                    var projectName = key;
-                    var isHeader = (key == "Task");
-                    var isFooter = (key == "Total");
-                    var rowMsg;
-                    if (isHeader)
-                    {
-                        columns = projSched;
-                        rowMsg = "<tr data-priority=\"index\"><th>Task</th>";
-                        $.each(projSched, function(index, val) {
-                            rowMsg += '<th>' + val + '</th>'
-                        });
-                        rowMsg += '</tr>'
-                        $('#scheduleTable thead').append(rowMsg);
-                        $('#scheduleTable').table('refresh');
-                    }
-                    else if (isFooter)
-                    {
-                        rowMsg = '<tr><th>' + projectName + '</th>'
-                        $.each(projSched, function(index, val) {
-                            rowMsg += '<th>' + val + '</th>'
-                        });
-                        rowMsg += '</tr>'
-                        totalRow = rowMsg;
-                    }
-                    else 
-                    {
-                        projSchedule = {};
-                        schedule[projectName] = projSchedule;
-                        rowMsg = '<tr><td>' + projectName + '</td>'
-                        $.each(projSched, function(index, val) {
-                            projSchedule[columns[index]] = val;
-                            rowMsg += '<td>' + val + '</td>'
-                        });
-                        rowMsg += '</tr>'
-                        $('#scheduleTable tbody').append(rowMsg);
-                        $('#scheduleTable').table('refresh');
-                    }
-                    
-                });
-                $('#scheduleTable tbody').append(totalRow);
-                $('#scheduleTable').table('refresh');
-            })
-            .fail(function(jqXHR, textStatus, errorThrown) {
-                console.log( "Error fetching schedule : " + textStatus + " " + errorThrown );
-                $('#scheduleTable tbody').empty();
-                $('#scheduleTable thead').empty();
-                $('#scheduleTable thead').append('<tr><th>Failed to load schedule.</th></tr>')
-                $('#importProjectsButton').button('disable');
-              });
+        if (personId == null || personId == '' || username == null || username == '' || password == null)
+        {
+            $('#loginButton').attr('href', '#schedule');
+            $.mobile.changePage("#login");
+        }
+        else
+        {
+            viewSchedule();
+            $.mobile.changePage("#schedule");
+        }
     });
     
     
@@ -688,23 +730,40 @@ $(document).bind('pagecreate', '#tracker', function(evt)
         }
     });
     
-    function createReportWithSchedule(startDate, endDate)
+    function createReportWithSchedule(startDate, endDate, calendarField, block)
     {
         if (!startDate || !endDate) return;
-        if ($('#checkbox-fetchSchedule').is(':checked') && $.isEmptyObject(schedule))
+        if ($('#checkbox-fetchSchedule').is(':checked'))
         {
             console.log('Getting schedule from server');
-            fetchScheduleForReport(startDate, endDate, 1, 'test', 'tomcat');
+            if (personId == null || personId == '' || username == null || username == '' || password == null)
+            {
+                reportStartDate = startDate;
+                reportEndDate = endDate;
+                reportCalendarField = calendarField;
+                reportBlock = block;
+                $('#loginButton').attr('href', '#reportResult');
+                $.mobile.changePage("#login");
+            }
+            else
+            {
+                fetchScheduleForReport(startDate, endDate, calendarField, block);
+                $.mobile.changePage("#reportResult"); 
+            }
         }
         else
         {
-            createReport(startDate, endDate);
-        }
+            createReport(startDate, endDate, false);
+            $.mobile.changePage("#reportResult"); 
+       }
     }
     $(document).off('click', '#reportSubmitButton').on('click', '#reportSubmitButton', function(){
         var startDate = $('#startDate').val();
         var endDate = $('#endDate').val();
-        createReportWithSchedule(startDate, endDate);
+        var start = parseDate(startDate);
+        var end = parseDate(endDate);
+        var diffDays = Math.round((end - start) / (24 * 60 * 60 * 1000)) 
+        createReportWithSchedule(startDate, endDate, 5, diffDays);
     });
     $(document).off('click', '#reportThisWeekButton').on('click', '#reportThisWeekButton', function(){
         date = new Date;
@@ -715,7 +774,7 @@ $(document).bind('pagecreate', '#tracker', function(evt)
         diff = firstDay.getDate() + 6;
         lastDay = new Date(firstDay.setDate(diff));
         endDate = formatDate(lastDay);
-        createReportWithSchedule(startDate, endDate);
+        createReportWithSchedule(startDate, endDate, 5, 7);
     });
     $(document).off('click', '#reportLastWeekButton').on('click', '#reportLastWeekButton', function(){
         today = new Date;
@@ -727,7 +786,7 @@ $(document).bind('pagecreate', '#tracker', function(evt)
         diff = firstDay.getDate() + 6;
         lastDay = new Date(firstDay.setDate(diff));
         endDate = formatDate(lastDay);
-        createReportWithSchedule(startDate, endDate);
+        createReportWithSchedule(startDate, endDate, 5, 7);
     });
     $(document).off('click', '#reportThisMonthButton').on('click', '#reportThisMonthButton', function(){
         date = new Date;
@@ -735,7 +794,7 @@ $(document).bind('pagecreate', '#tracker', function(evt)
         startDate = formatDate(firstDay);
         lastDay = new Date(date.getFullYear(), date.getMonth()+1, 0);
         endDate = formatDate(lastDay);
-        createReportWithSchedule(startDate, endDate);
+        createReportWithSchedule(startDate, endDate, 2, 1);
     });
     $(document).off('click', '#reportLastMonthButton').on('click', '#reportLastMonthButton', function(){
         date = new Date;
@@ -743,7 +802,7 @@ $(document).bind('pagecreate', '#tracker', function(evt)
         startDate = formatDate(firstDay);
         lastDay = new Date(date.getFullYear(), date.getMonth(), 0);
         endDate = formatDate(lastDay);
-        createReportWithSchedule(startDate, endDate);
+        createReportWithSchedule(startDate, endDate, 2, 1);
     });    
     
 });
@@ -850,8 +909,9 @@ function deleteProject(projectName)
     storeTimex(new Date, readProjects); 
 }
 
-function createReport(startDate, endDate)
+function createReport(startDate, endDate, showSchedule)
 {
+    if (showSchedule === undefined) showSchedule = false;
     console.log('Creating report for ' + startDate + " to " + endDate);
     // lookup record
     var indexTransaction = db.transaction(["timex"], "readonly");
@@ -912,7 +972,7 @@ function createReport(startDate, endDate)
          var total_duration = 0;
          var reportWithDurations = {}
          var msg = '<tr><th>Project</th><th>Time</th>';
-         if (!$.isEmptyObject(schedule))
+         if (showSchedule)
          {
              msg += '<th style="text-align:right;">Minimum</th>';
              msg += '<th style="text-align:right;">Suggested</th>';
@@ -930,7 +990,7 @@ function createReport(startDate, endDate)
              total_duration += durationInSeconds;
              msg = "<tr><td>" + projectName + '</td>';
              msg += '<td>' + secondsToDuration(durationInSeconds, false) + '</td>';
-             if (projectName in schedule)
+             if (showSchedule && projectName in schedule)
              {
                  projSched = schedule[projectName];
                  var minimum = '';
@@ -956,7 +1016,7 @@ function createReport(startDate, endDate)
              $('#reportTable').table('refresh');
          }
          msg = '<tr><th>Total</th><th>' + secondsToDuration(total_duration, false) + '</th>';
-         if (!$.isEmptyObject(schedule))
+         if (showSchedule)
              msg += '<td></td><td style="text-align:right;">' + pretty_time_string(suggestedTotal) + ':00</td>';
          msg += '</tr>';
          $('#reportTable tbody').append(msg);
