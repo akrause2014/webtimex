@@ -13,6 +13,25 @@
         padding-top:.22em;
         padding-bottom:.22em;
     }
+    .project-table thead th,
+    .project-table tbody tr:last-child {
+        border-bottom: 1px solid #d6d6d6; /* non-RGBA fallback */
+        border-bottom: 1px solid rgba(0,0,0,.1);
+    }
+    .project-table tbody th,
+    .project-table tbody td {
+        border-bottom: 1px solid #e6e6e6; /* non-RGBA fallback  */
+        border-bottom: 1px solid rgba(0,0,0,.05);
+    }
+    .project-table tbody tr:last-child th,
+    .project-table tbody tr:last-child td {
+        border-bottom: 0;
+    }
+    .project-table tbody tr:nth-child(odd) td,
+    .project-table tbody tr:nth-child(odd) th {
+        background-color: #eeeeee; /* non-RGBA fallback  */
+        background-color: rgba(0,0,0,.04);
+    }
     </style>
     <script src="js/jquery-1.11.2.min.js"></script>
     <script src="jquery.mobile-1.4.5/jquery.mobile-1.4.5.min.js"></script>
@@ -97,6 +116,7 @@
              <a href="#editProjects" class="ui-btn ui-shadow">Edit Data</a>
              <a href="#addProject" data-rel="popup" class="ui-btn ui-shadow">Add Project</a>
              <button id="deleteProjectButton" class="ui-btn ui-shadow" data-rel="close">Delete Selected</button>
+             <a href="#schedule" id="fetchScheduleButton" class="ui-btn ui-shadow">View Schedule</a>
           </div>
         </div>
         <div class="ui-corner-all custom-corners">
@@ -149,14 +169,36 @@
         </ul>
         <ul data-role="listview" data-inset="true" data-icon="false" id="totalTimeListview">
         </ul>
-        <input id="stopTrackerButton" value="Pause" type="button" data-rel="close"></input> 
+        <input id="stopTrackerButton" value="Pause" type="button"></input> 
         
         
     </div>
 
 </div><!-- /page -->
 
-<!-- Start of second page -->
+
+<div data-role="page" id="schedule" data-title="Timex">
+
+    <div data-role="header">
+        <a href="#tracker" class="ui-btn ui-btn-icon-left ui-icon-carat-l" data-transition="slide" data-direction="reverse">Tracker</a>
+        <h1>Schedule</h1>
+    </div><!-- /header -->
+
+    <div role="main" class="ui-content">
+        <table data-role="table" id="scheduleTable" data-mode="reflow" data-inset class="ui-responsive project-table">
+            <thead>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+
+        <input id="importProjectsButton" value="Add Projects To Tracker" type="button"></input>
+
+    </div>
+        
+
+</div>
+
 <div data-role="page" id="report" data-title="Timex">
 
     <div data-role="header">
@@ -165,6 +207,9 @@
     </div><!-- /header -->
 
     <div role="main" class="ui-content">
+        
+        <input type="checkbox" name="checkbox-fetchSchedule" id="checkbox-fetchSchedule">
+        <label for="checkbox-fetchSchedule">Fetch Schedule</label>
         
         <h3>Select a date range:</h3>
         <div>
@@ -193,7 +238,7 @@
     </div><!-- /header -->
 
     <div role="main" class="ui-content">
-        
+        <!--
         <ul data-role="listview" data-inset="true" data-icon="false" id="reportListView">
             <li>
                 <div class="ui-grid-a">
@@ -206,6 +251,15 @@
                 </div>
             </li>
         </ul>
+        <ul data-role="listview" data-inset="true" data-icon="false" id="totalReportListview">
+        </ul>
+        -->
+        <table data-role="table" id="reportTable" data-mode="reflow" class="ui-responsive project-table">
+            <thead>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
         
         <a id="downloadReportAsJSON" class="ui-btn ui-shadow">Download as JSON</a>
     </div>
