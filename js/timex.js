@@ -5,15 +5,15 @@ var db;
 var editedProjects = {}
 var editedDate = null;
 
-var schedule = {};
-var username = null;
-var personId = null;
-var password = null;
-
-var reportStartDate;
-var reportEndDate;
-var reportCalendarField;
-var reportBlock;
+// var schedule = {};
+// var username = null;
+var personId = 32; // fixed for testing - akrause
+// var password = null;
+//
+// var reportStartDate;
+// var reportEndDate;
+// var reportCalendarField;
+// var reportBlock;
 
 
 function pretty_time_string(num) 
@@ -331,8 +331,7 @@ function loadEditDate()
 function fetchScheduleForReport(startDate, endDate, calendarField, block)
 {    
     var start = parseDate(startDate);
-    $.getJSON("http://" + username + ":" + password 
-                + "@localhost:8080/PLANNING/RestServlet/Balance/" 
+    $.getJSON("http://localhost:8080/PLANNING/RestServlet/Balance/" 
                 + personId + ":::Person-" + start.getTime() + "-" + calendarField + "-" + block + "-1")
         .fail(function(jqXHR, textStatus, errorThrown) {
             console.log( "Error fetching schedule : " + textStatus + " " + errorThrown );
@@ -377,8 +376,7 @@ function viewSchedule()
     // var username = "test";
     // var password = "tomcat";
     $('#scheduleTable tbody').empty();
-    $.getJSON("http://" + username + ":" + password 
-                + "@localhost:8080/PLANNING/RestServlet/Balance/" 
+    $.getJSON("http://localhost:8080/PLANNING/RestServlet/Balance/" 
                 + personId + ":::Person-" + firstDay.getTime() + "-2-1-1", 
         function( data ) {
             if (!data['success'] || !data['valid']) return;
@@ -652,29 +650,8 @@ $(document).bind('pagecreate', '#tracker', function(evt)
             addProjects(importedProjects);
         }
     });
-    $(document).off('click', '#loginButton').on('click', '#loginButton', function(){
-        username = $('#usernameInput').val();
-        personId = $('#personidInput').val();
-        password = $('#passwordInput').val();
-        console.log('login: ' + username + ':' + password + ':' + personId);
-        if ($('#loginButton').attr('href') == '#schedule')
-            viewSchedule();
-        else if ($('#loginButton').attr('href') == '#reportResult')
-        {
-            fetchScheduleForReport(reportStartDate, reportEndDate, reportCalendarField, reportBlock);
-        }
-    });
     $(document).off('click', '#fetchScheduleButton').on('click', '#fetchScheduleButton', function(){
-        if (personId == null || personId == '' || username == null || username == '' || password == null)
-        {
-            $('#loginButton').attr('href', '#schedule');
-            $.mobile.changePage("#login");
-        }
-        else
-        {
-            viewSchedule();
-            $.mobile.changePage("#schedule");
-        }
+        viewSchedule();
     });
     
     
@@ -736,25 +713,13 @@ $(document).bind('pagecreate', '#tracker', function(evt)
         if ($('#checkbox-fetchSchedule').is(':checked'))
         {
             console.log('Getting schedule from server');
-            if (personId == null || personId == '' || username == null || username == '' || password == null)
-            {
-                reportStartDate = startDate;
-                reportEndDate = endDate;
-                reportCalendarField = calendarField;
-                reportBlock = block;
-                $('#loginButton').attr('href', '#reportResult');
-                $.mobile.changePage("#login");
-            }
-            else
-            {
-                fetchScheduleForReport(startDate, endDate, calendarField, block);
-                $.mobile.changePage("#reportResult"); 
-            }
+            fetchScheduleForReport(startDate, endDate, calendarField, block);
+            // $.mobile.changePage("#reportResult");
         }
         else
         {
             createReport(startDate, endDate, false);
-            $.mobile.changePage("#reportResult"); 
+            // $.mobile.changePage("#reportResult");
        }
     }
     $(document).off('click', '#reportSubmitButton').on('click', '#reportSubmitButton', function(){
@@ -979,7 +944,8 @@ function createReport(startDate, endDate, showSchedule)
          }
          msg += '</tr>';
          $('#reportTable thead').empty().append(msg);
-         $('#reportTable').table('refresh');
+         if(typeof $('#reportTable').table() !== "undefined")
+             $('#reportTable').table('refresh');
          $('#reportTable tbody').empty();
          var suggestedTotal = 0;
          for (projectName in report)
@@ -990,26 +956,29 @@ function createReport(startDate, endDate, showSchedule)
              total_duration += durationInSeconds;
              msg = "<tr><td>" + projectName + '</td>';
              msg += '<td>' + secondsToDuration(durationInSeconds, false) + '</td>';
-             if (showSchedule && projectName in schedule)
+             if (showSchedule)
              {
-                 projSched = schedule[projectName];
-                 var minimum = '';
-                 var suggested = '';
-                 if (('Minimum') in projSched) 
+                 var minimum = '--:--';
+                 var suggested = '--:--';
+                 if (projectName in schedule)
                  {
-                     var mintime = parseInt(schedule[projectName]['Minimum']);
-                     if (isNaN(mintime)) mintime = 0;
-                     minimum = pretty_time_string(mintime);
+                     projSched = schedule[projectName];
+                     if (('Minimum') in projSched) 
+                     {
+                         var mintime = parseInt(schedule[projectName]['Minimum']);
+                         if (isNaN(mintime)) mintime = 0;
+                         minimum = pretty_time_string(mintime) + ':00';
+                     }
+                     if (('Suggested') in projSched) 
+                     {
+                         var sugtime = parseInt(schedule[projectName]['Suggested']);
+                         if (isNaN(sugtime)) sugtime = 0;
+                         suggestedTotal += sugtime;
+                         suggested = pretty_time_string(sugtime) + ':00';
+                     }
                  }
-                 if (('Suggested') in projSched) 
-                 {
-                     var sugtime = parseInt(schedule[projectName]['Suggested']);
-                     if (isNaN(sugtime)) sugtime = 0;
-                     suggestedTotal += sugtime;
-                     suggested = pretty_time_string(sugtime);
-                 }
-                 msg += '<td style="text-align:right;">' + minimum + ':00</td>';
-                 msg += '<td style="text-align:right;">' + suggested + ':00</td>';
+                 msg += '<td style="text-align:right;">' + minimum + '</td>';
+                 msg += '<td style="text-align:right;">' + suggested + '</td>';
              }
              msg += '</tr>';
              $('#reportTable tbody').append(msg);
