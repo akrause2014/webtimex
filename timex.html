@@ -125,6 +125,7 @@
           </div>
           <div class="ui-body ui-body-a" >
              <a href="#report" class="ui-btn ui-shadow" data-transition="slide">Create Report</a>
+             <a href="#update515" class="ui-btn ui-shadow" data-transition="slide">Update 515</a>
           </div>
         </div>
         <div class="ui-corner-all custom-corners">
@@ -195,9 +196,44 @@
         <input id="importProjectsButton" value="Add Projects To Tracker" type="button"></input>
 
     </div>
+
+</div>
+
+<div data-role="page" id="update515" data-title="Timex">
+
+    <div data-role="header">
+        <a href="#tracker" class="ui-btn ui-btn-icon-left ui-icon-carat-l" data-transition="slide" data-direction="reverse">Tracker</a>
+        <h1>515</h1>
+    </div><!-- /header -->
+
+    <div role="main" class="ui-content">
+        <div><h2 id="update515MonthHeader" style="text-align:center;"></h2></div>
+        
+        <div class="ui-grid-a">
+            <div class="ui-block-a"><a id="update515PrevMonthButton" class="ui-btn ui-icon-carat-l ui-btn-icon-left ui-corner-all" type="button">Previous</a></div>
+            <div class="ui-block-b"><a id="update515NextMonthButton" class="ui-btn ui-icon-carat-r ui-btn-icon-right ui-corner-all" type="button">Next</a></div>
+        </div>
+        
+        <table data-role="table" id="update515Table" data-mode="reflow" data-inset class="ui-responsive project-table">
+            <thead>
+                <tr>
+                    <th>Task</th>
+                    <th>Actual</th>
+                    <th>Minimum</th>
+                    <th>Suggested</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+
+        <input id="post515Update" value="Update 515" type="button"></input>
+
+    </div>
         
 
 </div>
+
 
 <div data-role="page" id="report" data-title="Timex">
 

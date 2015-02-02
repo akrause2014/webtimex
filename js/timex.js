@@ -15,6 +15,7 @@ var personId = 32; // fixed for testing - akrause
 // var reportCalendarField;
 // var reportBlock;
 
+var monthNames = [ "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" ];
 
 function pretty_time_string(num) 
 {
@@ -328,6 +329,38 @@ function loadEditDate()
     };  
 }
 
+function parseSchedule(data)
+{
+    var result = {}
+    if (!data['success'] || !data['valid']) return;
+    var jsonSchedule = data['Schedule']
+    var totalRow = '';
+    var columns;
+    var total;
+    $.each( jsonSchedule, function( key, projSched ) {
+        var projectName = key;
+        var isHeader = (key == "Task");
+        var isFooter = (key == "Total");
+        if (isHeader)
+        {
+            columns = projSched;
+        }
+        else if (isFooter)
+        {
+            
+        }
+        else 
+        {
+            projSchedule = {};
+            result[projectName] = projSchedule;
+            $.each(projSched, function(index, val) {
+                projSchedule[columns[index]] = val;
+            });
+        }
+    });
+    return result;
+}
+
 function fetchScheduleForReport(startDate, endDate, calendarField, block)
 {    
     var start = parseDate(startDate);
@@ -338,34 +371,83 @@ function fetchScheduleForReport(startDate, endDate, calendarField, block)
             createReport(startDate, endDate, false);
           })
         .done(function(data){
-            if (!data['success'] || !data['valid']) return;
-            var jsonSchedule = data['Schedule']
-            var totalRow = '';
-            var columns;
-            var total;
-            $.each( jsonSchedule, function( key, projSched ) {
-                var projectName = key;
-                var isHeader = (key == "Task");
-                var isFooter = (key == "Total");
-                if (isHeader)
-                {
-                    columns = projSched;
-                }
-                else if (isFooter)
-                {
-                    
-                }
-                else 
-                {
-                    projSchedule = {};
-                    schedule[projectName] = projSchedule;
-                    $.each(projSched, function(index, val) {
-                        projSchedule[columns[index]] = val;
-                    });
-                }
-            });
+            schedule = parseSchedule(data);
             createReport(startDate, endDate, true);
     });
+}
+
+function update515Table(report, schedule)
+{
+    var total_duration = 0;
+    var reportWithDurations = {}
+    var msg = '<tr><th>Project</th>';
+    msg += '<th style="text-align:right;">Minimum</th>';
+    msg += '<th style="text-align:right;">Suggested</th>';
+    msg += '<th style="text-align:right;">Reported</th>';
+    msg += '<th style="text-align:right;">Time</th></tr>';
+    $('#update515Table thead').empty().append(msg);
+    if(typeof $('#update515Table').table() !== "undefined")
+        $('#update515Table').table('refresh');
+    $('#update515Table tbody').empty();
+    var suggestedTotal = 0;
+    for (projectName in report)
+    {
+        var durationInSeconds = report[projectName];
+        if (isNaN(durationInSeconds)) durationInSeconds = 0;
+        reportWithDurations[projectName] = secondsToDuration(durationInSeconds, false);
+        total_duration += durationInSeconds;
+        msg = "<tr><td>" + projectName + '</td>';
+        var minimum = '--:--';
+        var suggested = '--:--';
+        if (projectName in schedule)
+        {
+            projSched = schedule[projectName];
+            var mintime = parseInt(schedule[projectName]['Minimum']);
+            if (isNaN(mintime)) mintime = 0;
+            minimum = pretty_time_string(mintime) + ':00';
+            var sugtime = parseInt(schedule[projectName]['Suggested']);
+            if (isNaN(sugtime)) sugtime = 0;
+            suggestedTotal += sugtime;
+            suggested = pretty_time_string(sugtime) + ':00';
+        }
+        msg += '<td style="text-align:right;">' + minimum + '</td>';
+        msg += '<td style="text-align:right;">' + suggested + '</td>';
+        msg += '<td style="text-align:right;">00:00</td>';
+        msg += '<td style="text-align:right;"><input style="text-align:right;" type="text" value="' + secondsToDuration(durationInSeconds, false) + '"></input></td>';
+        msg += '</tr>';
+        $('#update515Table tbody').append(msg);
+        $('#update515Table').table('refresh');
+    }
+    msg = '<tr><th>Total</th><td></td>';
+    msg += '<td style="text-align:right;">' + pretty_time_string(suggestedTotal) + ':00</td>';
+    msg += '<td style="text-align:right;">00:00</td>';
+    msg += '<th style="text-align:right;">' + secondsToDuration(total_duration, false) + '</th>';
+    msg += '</tr>';
+    $('#update515Table tbody').append(msg);
+    $('#update515Table').table('refresh');
+    
+}
+
+function fetchScheduleFor515()
+{
+    var date = new Date;
+    var lastMonthStart = new Date(date.getFullYear(), date.getMonth()-1, 1);
+    var month = monthNames[lastMonthStart.getMonth()];
+    $('#update515MonthHeader').text(month + ' ' + lastMonthStart.getFullYear());
+    console.log('Fetching schedule for ' + month + ' ' + lastMonthStart.getFullYear());
+    $.getJSON("http://localhost:8080/PLANNING/RestServlet/Balance/" 
+                + personId + ":::Person-" + lastMonthStart.getTime() + "-2-1-1")
+        .fail(function(jqXHR, textStatus, errorThrown) {
+            console.log( "Error fetching schedule : " + textStatus + " " + errorThrown );
+          })
+        .done(function(data){
+            var sched515 = parseSchedule(data);
+            console.log(sched515);
+            var startDate = formatDate(lastMonthStart);
+            var lastMonthEnd = new Date(date.getFullYear(), date.getMonth(), 0);
+            var endDate = formatDate(lastMonthEnd);
+            retrieveReport(startDate, endDate, update515Table, sched515);   
+     });
 }
 
 function viewSchedule()
@@ -527,6 +609,11 @@ $(document).bind('pagecreate', '#editProjects', function(evt)
     // });
 });
 
+
+$(document).off('pagebeforeshow', '#update515').on('pagebeforeshow', '#update515', function(){
+    fetchScheduleFor515();
+});
+
 $(document).off('pagebeforeshow', '#editProjects').on('pagebeforeshow', '#editProjects', function(){
     if (db !== undefined) loadEditDate();
 });
@@ -554,7 +641,6 @@ $(document).bind('pagecreate', '#tracker', function(evt)
 {
     var today = new Date   
     var weekDays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]; 
-    var monthNames = [ "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" ];
     $('#tracker_date').text(today.getDate() + ' ' + monthNames[today.getMonth()] + ' ' + today.getFullYear())
     
     //No support? Go in the corner and pout.
@@ -878,6 +964,80 @@ function createReport(startDate, endDate, showSchedule)
 {
     if (showSchedule === undefined) showSchedule = false;
     console.log('Creating report for ' + startDate + " to " + endDate);
+    retrieveReport(startDate, endDate, updateReportTable, showSchedule);
+}
+
+function updateReportTable(report, showSchedule)
+{
+    console.log('Creating report for ' + startDate + " to " + endDate + ", show schedule? " + showSchedule);
+    
+    var total_duration = 0;
+    var reportWithDurations = {}
+    var msg = '<tr><th>Project</th><th>Time</th>';
+    if (showSchedule)
+    {
+        msg += '<th style="text-align:right;">Minimum</th>';
+        msg += '<th style="text-align:right;">Suggested</th>';
+    }
+    msg += '</tr>';
+    $('#reportTable thead').empty().append(msg);
+    if(typeof $('#reportTable').table() !== "undefined")
+        $('#reportTable').table('refresh');
+    $('#reportTable tbody').empty();
+    var suggestedTotal = 0;
+    for (projectName in report)
+    {
+        var durationInSeconds = report[projectName];
+        if (isNaN(durationInSeconds)) durationInSeconds = 0;
+        reportWithDurations[projectName] = secondsToDuration(durationInSeconds, false);
+        total_duration += durationInSeconds;
+        msg = "<tr><td>" + projectName + '</td>';
+        msg += '<td>' + secondsToDuration(durationInSeconds, false) + '</td>';
+        if (showSchedule)
+        {
+            var minimum = '--:--';
+            var suggested = '--:--';
+            if (projectName in schedule)
+            {
+                projSched = schedule[projectName];
+                if (('Minimum') in projSched) 
+                {
+                    var mintime = parseInt(schedule[projectName]['Minimum']);
+                    if (isNaN(mintime)) mintime = 0;
+                    minimum = pretty_time_string(mintime) + ':00';
+                }
+                if (('Suggested') in projSched) 
+                {
+                    var sugtime = parseInt(schedule[projectName]['Suggested']);
+                    if (isNaN(sugtime)) sugtime = 0;
+                    suggestedTotal += sugtime;
+                    suggested = pretty_time_string(sugtime) + ':00';
+                }
+            }
+            msg += '<td style="text-align:right;">' + minimum + '</td>';
+            msg += '<td style="text-align:right;">' + suggested + '</td>';
+        }
+        msg += '</tr>';
+        $('#reportTable tbody').append(msg);
+        $('#reportTable').table('refresh');
+    }
+    msg = '<tr><th>Total</th><th>' + secondsToDuration(total_duration, false) + '</th>';
+    if (showSchedule)
+        msg += '<td></td><td style="text-align:right;">' + pretty_time_string(suggestedTotal) + ':00</td>';
+    msg += '</tr>';
+    $('#reportTable tbody').append(msg);
+    $('#reportTable').table('refresh');
+    
+    var json = JSON.stringify(reportWithDurations);
+    var blob = new Blob([json], {type: "application/json"});
+    var url  = URL.createObjectURL(blob);
+    document.getElementById('downloadReportAsJSON').href=url
+    document.getElementById('downloadReportAsJSON').download = 'Timex_' + startDate + "_" + endDate + ".jsn";
+    
+}
+
+function retrieveReport(startDate, endDate, oncomplete)
+{
     // lookup record
     var indexTransaction = db.transaction(["timex"], "readonly");
     var store = indexTransaction.objectStore("timex");
@@ -913,89 +1073,11 @@ function createReport(startDate, endDate, showSchedule)
              }
              cursor.continue();
          }
-     };  
+     };
+     var arg = arguments[3];
      indexTransaction.oncomplete = function(evt)
      {
-         // $('#report_date_range').text(startDate + " to " + endDate);
-         // $('#reportListView').empty().append(createProjectListHeader());
-         // var total_duration = 0;
-         // var reportWithDurations = {}
-         // for (projectName in report)
-         // {
-         //     var durationInSeconds = report[projectName]
-         //     if (isNaN(durationInSeconds)) durationInSeconds = 0;
-         //     reportWithDurations[projectName] = secondsToDuration(durationInSeconds, false);
-         //     total_duration += durationInSeconds;
-         //     msg = createProjectListItem(projectName, null, durationInSeconds, false);
-         //     $('#reportListView').append(msg);
-         //     $('#reportListView').listview('refresh');
-         // }
-         // msg = createProjectListItem("Total", null, total_duration, false);
-         // $('#totalReportListview').empty().append(msg);
-         // $('#totalReportListview').listview('refresh');
-         
-         var total_duration = 0;
-         var reportWithDurations = {}
-         var msg = '<tr><th>Project</th><th>Time</th>';
-         if (showSchedule)
-         {
-             msg += '<th style="text-align:right;">Minimum</th>';
-             msg += '<th style="text-align:right;">Suggested</th>';
-         }
-         msg += '</tr>';
-         $('#reportTable thead').empty().append(msg);
-         if(typeof $('#reportTable').table() !== "undefined")
-             $('#reportTable').table('refresh');
-         $('#reportTable tbody').empty();
-         var suggestedTotal = 0;
-         for (projectName in report)
-         {
-             var durationInSeconds = report[projectName];
-             if (isNaN(durationInSeconds)) durationInSeconds = 0;
-             reportWithDurations[projectName] = secondsToDuration(durationInSeconds, false);
-             total_duration += durationInSeconds;
-             msg = "<tr><td>" + projectName + '</td>';
-             msg += '<td>' + secondsToDuration(durationInSeconds, false) + '</td>';
-             if (showSchedule)
-             {
-                 var minimum = '--:--';
-                 var suggested = '--:--';
-                 if (projectName in schedule)
-                 {
-                     projSched = schedule[projectName];
-                     if (('Minimum') in projSched) 
-                     {
-                         var mintime = parseInt(schedule[projectName]['Minimum']);
-                         if (isNaN(mintime)) mintime = 0;
-                         minimum = pretty_time_string(mintime) + ':00';
-                     }
-                     if (('Suggested') in projSched) 
-                     {
-                         var sugtime = parseInt(schedule[projectName]['Suggested']);
-                         if (isNaN(sugtime)) sugtime = 0;
-                         suggestedTotal += sugtime;
-                         suggested = pretty_time_string(sugtime) + ':00';
-                     }
-                 }
-                 msg += '<td style="text-align:right;">' + minimum + '</td>';
-                 msg += '<td style="text-align:right;">' + suggested + '</td>';
-             }
-             msg += '</tr>';
-             $('#reportTable tbody').append(msg);
-             $('#reportTable').table('refresh');
-         }
-         msg = '<tr><th>Total</th><th>' + secondsToDuration(total_duration, false) + '</th>';
-         if (showSchedule)
-             msg += '<td></td><td style="text-align:right;">' + pretty_time_string(suggestedTotal) + ':00</td>';
-         msg += '</tr>';
-         $('#reportTable tbody').append(msg);
-         $('#reportTable').table('refresh');
-         
-         var json = JSON.stringify(reportWithDurations);
-         var blob = new Blob([json], {type: "application/json"});
-         var url  = URL.createObjectURL(blob);
-         document.getElementById('downloadReportAsJSON').href=url
-         document.getElementById('downloadReportAsJSON').download = 'Timex_' + startDate + "_" + endDate + ".jsn";
+         oncomplete(report, arg);
      } 
 }
 
