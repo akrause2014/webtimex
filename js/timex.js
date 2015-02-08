@@ -5,15 +5,11 @@ var db;
 var editedProjects = {}
 var editedDate = null;
 
-// var schedule = {};
-// var username = null;
-var personId = 32; // fixed for testing - akrause
-// var password = null;
-//
-// var reportStartDate;
-// var reportEndDate;
-// var reportCalendarField;
-// var reportBlock;
+var schedule = {};
+var report515 = {}
+// fixed for testing - akrause
+var personId = 32; 
+var personWebName = 'akrause';
 
 var monthNames = [ "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" ];
 
@@ -50,6 +46,12 @@ function durationToSeconds(s)
     }   
     totalSeconds = hours*3600 + minutes*60 + seconds;
     return totalSeconds;
+}
+
+function secondsToHours(total_seconds)
+{
+    var hours = total_seconds/3600;
+    return hours.toFixed(1);
 }
 
 function secondsToDuration(total_seconds, showSeconds)
@@ -333,7 +335,7 @@ function parseSchedule(data)
 {
     var result = {}
     if (!data['success'] || !data['valid']) return;
-    var jsonSchedule = data['Schedule']
+    var jsonSchedule = data['data']
     var totalRow = '';
     var columns;
     var total;
@@ -378,8 +380,9 @@ function fetchScheduleForReport(startDate, endDate, calendarField, block)
 
 function update515Table(report, schedule)
 {
+    report515 = {};
     var total_duration = 0;
-    var reportWithDurations = {}
+    var reportWithDurations = {};
     var msg = '<tr><th>Project</th>';
     msg += '<th style="text-align:right;">Minimum</th>';
     msg += '<th style="text-align:right;">Suggested</th>';
@@ -390,6 +393,8 @@ function update515Table(report, schedule)
         $('#update515Table').table('refresh');
     $('#update515Table tbody').empty();
     var suggestedTotal = 0;
+    var reportedTotal = 0;
+    var i = 0;
     for (projectName in report)
     {
         var durationInSeconds = report[projectName];
@@ -397,31 +402,41 @@ function update515Table(report, schedule)
         reportWithDurations[projectName] = secondsToDuration(durationInSeconds, false);
         total_duration += durationInSeconds;
         msg = "<tr><td>" + projectName + '</td>';
-        var minimum = '--:--';
-        var suggested = '--:--';
+        var minimum = '--';
+        var suggested = '--';
+        var reported = '--';
         if (projectName in schedule)
         {
-            projSched = schedule[projectName];
-            var mintime = parseInt(schedule[projectName]['Minimum']);
-            if (isNaN(mintime)) mintime = 0;
-            minimum = pretty_time_string(mintime) + ':00';
-            var sugtime = parseInt(schedule[projectName]['Suggested']);
-            if (isNaN(sugtime)) sugtime = 0;
-            suggestedTotal += sugtime;
-            suggested = pretty_time_string(sugtime) + ':00';
+            var projSched = schedule[projectName];
+            var minimum = parseInt(projSched['Minimum']);
+            if (isNaN(minimum)) minimum = 0;
+            var suggested = parseInt(projSched['Suggested']);
+            if (isNaN(suggested)) suggested = 0;
+            suggestedTotal += suggested;
+            if ('Reported' in projSched)
+            {
+                reported = projSched['Reported'];
+                reportedTotal += reported;
+                reported = reported.toFixed(1);
+            }
         }
         msg += '<td style="text-align:right;">' + minimum + '</td>';
         msg += '<td style="text-align:right;">' + suggested + '</td>';
-        msg += '<td style="text-align:right;">00:00</td>';
-        msg += '<td style="text-align:right;"><input style="text-align:right;" type="text" value="' + secondsToDuration(durationInSeconds, false) + '"></input></td>';
+        msg += '<td style="text-align:right;">' + reported + '</td>';
+        msg += '<td style="text-align:right;">';
+        msg += '<input style="text-align:right;" type="text" id="update515Project' + i + '" value="';
+        msg += secondsToHours(durationInSeconds);
+        msg += '"></input></td>';
         msg += '</tr>';
+        if (projectName != "Leave") report515[projectName] = i;
+        i++;
         $('#update515Table tbody').append(msg);
         $('#update515Table').table('refresh');
     }
     msg = '<tr><th>Total</th><td></td>';
-    msg += '<td style="text-align:right;">' + pretty_time_string(suggestedTotal) + ':00</td>';
-    msg += '<td style="text-align:right;">00:00</td>';
-    msg += '<th style="text-align:right;">' + secondsToDuration(total_duration, false) + '</th>';
+    msg += '<td style="text-align:right;">' + suggestedTotal + '</td>';
+    msg += '<td style="text-align:right;">' + reportedTotal.toFixed(1) + '</td>';
+    msg += '<th style="text-align:right;">' + secondsToHours(total_duration) + '</th>';
     msg += '</tr>';
     $('#update515Table tbody').append(msg);
     $('#update515Table').table('refresh');
@@ -430,22 +445,30 @@ function update515Table(report, schedule)
 
 function fetchScheduleFor515()
 {
-    var date = new Date;
-    var lastMonthStart = new Date(date.getFullYear(), date.getMonth()-1, 1);
-    var month = monthNames[lastMonthStart.getMonth()];
-    $('#update515MonthHeader').text(month + ' ' + lastMonthStart.getFullYear());
-    console.log('Fetching schedule for ' + month + ' ' + lastMonthStart.getFullYear());
-    $.getJSON("http://localhost:8080/PLANNING/RestServlet/Balance/" 
-                + personId + ":::Person-" + lastMonthStart.getTime() + "-2-1-1")
+    var date = $('#update515MonthHeader').attr('data-value');
+    var startOfMonth;
+    if (date !== undefined)
+    {
+         startOfMonth = parseDate(date);
+    }
+    else
+    {
+        date = new Date;
+        startOfMonth = new Date(date.getFullYear(), date.getMonth()-1, 1);
+        $('#update515MonthHeader').text(monthNames[startOfMonth.getMonth()] + ' ' + startOfMonth.getFullYear());
+        $('#update515MonthHeader').attr('data-value', formatDate(startOfMonth));
+    }
+    console.log('Fetching schedule for ' + $('#update515MonthHeader').text());
+    $.getJSON("http://localhost:8080/PLANNING/Report515Servlet/" + personWebName + "/" + startOfMonth.getTime())
         .fail(function(jqXHR, textStatus, errorThrown) {
             console.log( "Error fetching schedule : " + textStatus + " " + errorThrown );
           })
         .done(function(data){
+            // console.log("Schedule: " + data);
             var sched515 = parseSchedule(data);
-            console.log(sched515);
-            var startDate = formatDate(lastMonthStart);
-            var lastMonthEnd = new Date(date.getFullYear(), date.getMonth(), 0);
-            var endDate = formatDate(lastMonthEnd);
+            var startDate = formatDate(startOfMonth);
+            var endOfMonth = new Date(startOfMonth.getFullYear(), startOfMonth.getMonth()+1, 0);
+            var endDate = formatDate(endOfMonth);
             retrieveReport(startDate, endDate, update515Table, sched515);   
      });
 }
@@ -458,11 +481,12 @@ function viewSchedule()
     // var username = "test";
     // var password = "tomcat";
     $('#scheduleTable tbody').empty();
+    schedule = {}
     $.getJSON("http://localhost:8080/PLANNING/RestServlet/Balance/" 
                 + personId + ":::Person-" + firstDay.getTime() + "-2-1-1", 
         function( data ) {
             if (!data['success'] || !data['valid']) return;
-            var jsonSchedule = data['Schedule']
+            var jsonSchedule = data['data']
             var totalRow = '';
             $('#scheduleTable thead').empty();
             $('#scheduleTable tbody').empty();
@@ -611,6 +635,58 @@ $(document).bind('pagecreate', '#editProjects', function(evt)
 
 
 $(document).off('pagebeforeshow', '#update515').on('pagebeforeshow', '#update515', function(){
+    
+    $(document).off('click', '#update515PrevMonthButton').on('click', '#update515PrevMonthButton', function(){
+        var date = $('#update515MonthHeader').attr('data-value');
+        var startOfMonth = parseDate(date);
+        startOfMonth.setMonth(startOfMonth.getMonth()-1)
+        $('#update515MonthHeader').text(monthNames[startOfMonth.getMonth()] + ' ' + startOfMonth.getFullYear());
+        $('#update515MonthHeader').attr('data-value', formatDate(startOfMonth));
+        fetchScheduleFor515();
+    });
+    $(document).off('click', '#update515NextMonthButton').on('click', '#update515NextMonthButton', function(){
+        var date = $('#update515MonthHeader').attr('data-value');
+        var startOfMonth = parseDate(date);
+        startOfMonth.setMonth(startOfMonth.getMonth()+1)
+        $('#update515MonthHeader').text(monthNames[startOfMonth.getMonth()] + ' ' + startOfMonth.getFullYear());
+        $('#update515MonthHeader').attr('data-value', formatDate(startOfMonth));
+        fetchScheduleFor515();
+    });
+    $(document).off('click', '#post515Update').on('click', '#post515Update', function(){
+        var date = $('#update515MonthHeader').attr('data-value');
+        var startOfMonth = parseDate(date);
+        var data = {};
+        var tasks = {};
+        data['tasks'] = tasks;
+        for (projectName in report515)
+        {
+            var hours = parseFloat($('#update515Project' + report515[projectName]).val());
+            if (isNaN(hours)) hours = 0;
+            tasks[projectName] = hours.toFixed(1);
+        }
+        console.log('Updating 515 for ' + date + ' with: ' + data);
+        var r = confirm("Update 515? \n " + JSON.stringify(tasks));
+        if (r == true) 
+        {
+            $.ajax({
+                type: 'POST',
+                url: "http://localhost:8080/PLANNING/Report515Servlet/" + personWebName + "/" + startOfMonth.getTime(),
+                data: JSON.stringify(data),
+                success: function(data) { 
+                    var schedule = data['Reported'];
+                    var failed = data['Failed'];
+                    if (!$.isEmptyObject(failed))
+                    {
+                        alert("Updates failed for tasks: " + JSON.stringify(failed));
+                    }
+                    fetchScheduleFor515();
+                },
+                contentType: "application/json",
+                dataType: 'json'
+            });
+        }
+    });
+    
     fetchScheduleFor515();
 });
 
@@ -727,6 +803,7 @@ $(document).bind('pagecreate', '#tracker', function(evt)
     
     $(document).off('click', '#importProjectsButton').on('click', '#importProjectsButton', function(){
         var importedProjects = [];
+        console.log(schedule)
         $.each(schedule, function(projectName, projectSchedule){
             if (!(projectName in projects)) {
                 importedProjects.push(projectName);
