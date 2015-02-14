@@ -1051,6 +1051,7 @@ function createReport(startDate, endDate, showSchedule)
 function updateReportTable(report, showSchedule)
 {
     console.log('Creating report for ' + startDate + " to " + endDate + ", show schedule? " + showSchedule);
+    $('#report_date_range').text(startDate + ' to ' + endDate)
     
     var total_duration = 0;
     var reportWithDurations = {}
