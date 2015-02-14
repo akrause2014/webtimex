@@ -7,9 +7,6 @@ var editedDate = null;
 
 var schedule = {};
 var report515 = {}
-// fixed for testing - akrause
-var personId = 32; 
-var personWebName = 'akrause';
 
 var monthNames = [ "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" ];
 
@@ -366,8 +363,7 @@ function parseSchedule(data)
 function fetchScheduleForReport(startDate, endDate, calendarField, block)
 {    
     var start = parseDate(startDate);
-    $.getJSON("http://localhost:8080/PLANNING/RestServlet/Balance/" 
-                + personId + ":::Person-" + start.getTime() + "-" + calendarField + "-" + block + "-1")
+    $.getJSON("http://localhost:8080/PLANNING/RestServlet/Balance/:::Person-" + start.getTime() + "-" + calendarField + "-" + block + "-1")
         .fail(function(jqXHR, textStatus, errorThrown) {
             console.log( "Error fetching schedule : " + textStatus + " " + errorThrown );
             createReport(startDate, endDate, false);
@@ -395,6 +391,13 @@ function update515Table(report, schedule)
     var suggestedTotal = 0;
     var reportedTotal = 0;
     var i = 0;
+    for (projectName in schedule)
+    {
+        if (!(projectName in report))
+        {
+            report[projectName] = 0;
+        }
+    }
     for (projectName in report)
     {
         var durationInSeconds = report[projectName];
@@ -459,7 +462,7 @@ function fetchScheduleFor515()
         $('#update515MonthHeader').attr('data-value', formatDate(startOfMonth));
     }
     console.log('Fetching schedule for ' + $('#update515MonthHeader').text());
-    $.getJSON("http://localhost:8080/PLANNING/Report515Servlet/" + personWebName + "/" + startOfMonth.getTime())
+    $.getJSON("http://localhost:8080/PLANNING/Report515Servlet/" + startOfMonth.getTime())
         .fail(function(jqXHR, textStatus, errorThrown) {
             console.log( "Error fetching schedule : " + textStatus + " " + errorThrown );
           })
@@ -475,15 +478,11 @@ function fetchScheduleFor515()
 
 function viewSchedule()
 {
-    // var personId = 1;
     var date = new Date;
     var firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
-    // var username = "test";
-    // var password = "tomcat";
     $('#scheduleTable tbody').empty();
     schedule = {}
-    $.getJSON("http://localhost:8080/PLANNING/RestServlet/Balance/" 
-                + personId + ":::Person-" + firstDay.getTime() + "-2-1-1", 
+    $.getJSON("http://localhost:8080/PLANNING/RestServlet/Balance/:::Person-" + firstDay.getTime() + "-2-1-1", 
         function( data ) {
             if (!data['success'] || !data['valid']) return;
             var jsonSchedule = data['data']
@@ -670,7 +669,7 @@ $(document).off('pagebeforeshow', '#update515').on('pagebeforeshow', '#update515
         {
             $.ajax({
                 type: 'POST',
-                url: "http://localhost:8080/PLANNING/Report515Servlet/" + personWebName + "/" + startOfMonth.getTime(),
+                url: "http://localhost:8080/PLANNING/Report515Servlet/" + startOfMonth.getTime(),
                 data: JSON.stringify(data),
                 success: function(data) { 
                     var schedule = data['Reported'];
