@@ -623,6 +623,22 @@ $(document).bind('pagecreate', '#editProjects', function(evt)
     $(document).off('change', '#editDate').on('change', '#editDate', function(){
         loadEditDate();
     });
+    $(document).off('click', '#editAddCurrentButton').on('click', '#editAddCurrentButton', function(){
+        for (var projectName in projects)
+        {
+            if (!(projectName in editedProjects))
+            {
+                var newproject = {};
+                newproject['name'] = projectName;
+                newproject['duration'] = 0;
+                newproject['index'] = Object.keys(editedProjects).length;
+                editedProjects[projectName] = newproject;
+                msg = editAddRow(projectName, newproject['index'], 0);
+                $('#editListView').append(msg)
+                $('#editListView').listview('refresh');
+            }
+        }
+    });
     $(document).off('click', '#editDeleteAllButton').on('click', '#editDeleteAllButton', function(){
         $('#editListView').empty().append(createProjectListHeader());
         $('#editListView').listview('refresh');
