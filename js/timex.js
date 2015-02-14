@@ -1066,14 +1066,15 @@ function updateReportTable(report, showSchedule)
         $('#reportTable').table('refresh');
     $('#reportTable tbody').empty();
     var suggestedTotal = 0;
-    for (projectName in report)
+    for (var projectName in report)
     {
         var durationInSeconds = report[projectName];
         if (isNaN(durationInSeconds)) durationInSeconds = 0;
         reportWithDurations[projectName] = secondsToDuration(durationInSeconds, false);
         total_duration += durationInSeconds;
         msg = "<tr><td>" + projectName + '</td>';
-        msg += '<td>' + secondsToDuration(durationInSeconds, false) + '</td>';
+        var duration = secondsToDuration(durationInSeconds, false);
+        msg += '<td>' + duration + '</td>';
         if (showSchedule)
         {
             var minimum = '--:--';
@@ -1106,15 +1107,59 @@ function updateReportTable(report, showSchedule)
     if (showSchedule)
         msg += '<td></td><td style="text-align:right;">' + pretty_time_string(suggestedTotal) + ':00</td>';
     msg += '</tr>';
+    reportWithDurations['Total'] = secondsToDuration(total_duration, false);
     $('#reportTable tbody').append(msg);
     $('#reportTable').table('refresh');
     
-    var json = JSON.stringify(reportWithDurations);
+    // write JSON 
+    var json = JSON.stringify(reportWithDurations, null, 4);
+    $('#reportJSON').text(json);
     var blob = new Blob([json], {type: "application/json"});
     var url  = URL.createObjectURL(blob);
     document.getElementById('downloadReportAsJSON').href=url
     document.getElementById('downloadReportAsJSON').download = 'Timex_' + startDate + "_" + endDate + ".jsn";
     
+    // write formatted text
+    reportAsText(reportWithDurations);
+}
+
+function reportAsText(reportWithDurations)
+{
+    var maxPN = 0;
+    var maxD = 0;
+    for (var projectName in reportWithDurations)
+    {
+        maxPN = Math.max(maxPN, projectName.length);
+        maxD = Math.max(maxD, reportWithDurations[projectName].length)
+    }
+    var textLength = maxPN + maxD + 10;
+    var text = padString('Task', 'Hours', textLength) + '\n';
+    var hline = '';
+    for (var i=0; i<textLength; i++) hline += '-';
+    hline += '\n';
+    text += hline;
+    for (var projectName in reportWithDurations)
+    {
+        if (projectName == 'Total') text += hline;
+        text += padString(projectName, reportWithDurations[projectName], textLength) + '\n';
+    }
+    $('#reportText').text(text);
+    var blob = new Blob([text], {type: "text/plain"});
+    var url  = URL.createObjectURL(blob);
+    document.getElementById('downloadReportAsText').href=url
+    document.getElementById('downloadReportAsText').download = 'Timex_' + startDate + "_" + endDate + ".txt";
+}
+
+function padString(start, end, totalLength)
+{
+    var msg = start;
+    var padding = totalLength - start.length - end.length;
+    for (var i=0; i<padding; i++)
+    {
+        msg += ' ';
+    }
+    msg += end;
+    return msg;
 }
 
 function retrieveReport(startDate, endDate, oncomplete)

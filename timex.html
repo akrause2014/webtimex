@@ -32,6 +32,14 @@
         background-color: #eeeeee; /* non-RGBA fallback  */
         background-color: rgba(0,0,0,.04);
     }
+    pre {
+        padding: 1em 1em 1em 1em;
+        border: 1px solid #ccc;
+        background-color: #e6e6e6;
+        margin: 2em;
+        overflow: auto;
+        width: 93%;
+    }
     </style>
     <script src="js/jquery-1.11.2.min.js"></script>
     <script src="jquery.mobile-1.4.5/jquery.mobile-1.4.5.min.js"></script>
@@ -277,22 +285,7 @@
     </div><!-- /header -->
 
     <div role="main" class="ui-content">
-        <!--
-        <ul data-role="listview" data-inset="true" data-icon="false" id="reportListView">
-            <li>
-                <div class="ui-grid-a">
-                    <div class="ui-block-a" style="width:60%">
-                        <div class="ui-bar"><h3>Project</h3></div>
-                    </div>
-                    <div class="ui-block-b" style="width:40%">
-                        <div class="ui-bar"><h3>Time</h3></div>
-                    </div>
-                </div>
-            </li>
-        </ul>
-        <ul data-role="listview" data-inset="true" data-icon="false" id="totalReportListview">
-        </ul>
-        -->
+<!--
         <table data-role="table" id="reportTable" data-mode="reflow" class="ui-responsive project-table">
             <thead>
             </thead>
@@ -301,6 +294,37 @@
         </table>
         
         <a id="downloadReportAsJSON" class="ui-btn ui-shadow">Download as JSON</a>
+-->
+
+        <div data-role="tabs" id="reportFormat">
+            
+            <div data-role="navbar">
+                <ul>
+                    <li><a href="#tabReportHTML" data-ajax="false">HTML</a></li>
+                    <li><a href="#tabReportJSON" data-ajax="false">JSON</a></li>
+                    <li><a href="#tabReportText" data-ajax="false">Text</a></li>
+                </ul>
+            </div>
+            
+            <div id="tabReportHTML" class="ui-body-d ui-content">
+                <table data-role="table" id="reportTable" data-mode="reflow" class="ui-responsive project-table">
+                    <thead>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+            <div id="tabReportJSON">
+                <pre id="reportJSON">
+                </pre>
+                <a id="downloadReportAsJSON" class="ui-btn ui-shadow">Download as JSON</a>
+            </div>
+            <div id="tabReportText">
+                <pre id="reportText">
+                </pre>
+                <a id="downloadReportAsText" class="ui-btn ui-shadow">Download as Text</a>
+            </div>
+        </div>
     </div>
 
 </div>
