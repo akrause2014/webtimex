@@ -363,7 +363,7 @@ function parseSchedule(data)
 function fetchScheduleForReport(startDate, endDate, calendarField, block)
 {    
     var start = parseDate(startDate);
-    $.getJSON("http://localhost:8080/PLANNING/RestServlet/Balance/:::Person-" + start.getTime() + "-" + calendarField + "-" + block + "-1")
+    $.getJSON("/PLANNING/RestServlet/Balance/:::Person-" + start.getTime() + "-" + calendarField + "-" + block + "-1")
         .fail(function(jqXHR, textStatus, errorThrown) {
             console.log( "Error fetching schedule : " + textStatus + " " + errorThrown );
             createReport(startDate, endDate, false);
@@ -395,15 +395,17 @@ function update515Table(report, schedule)
     {
         if (!(projectName in report))
         {
-            report[projectName] = 0;
+            report[projectName] = '--';
         }
     }
     for (projectName in report)
     {
         var durationInSeconds = report[projectName];
-        if (isNaN(durationInSeconds)) durationInSeconds = 0;
-        reportWithDurations[projectName] = secondsToDuration(durationInSeconds, false);
-        total_duration += durationInSeconds;
+        if (!(isNaN(durationInSeconds)))
+        {
+            reportWithDurations[projectName] = secondsToDuration(durationInSeconds, false);
+            total_duration += durationInSeconds;
+        }
         msg = "<tr><td>" + projectName + '</td>';
         var minimum = '--';
         var suggested = '--';
@@ -462,7 +464,7 @@ function fetchScheduleFor515()
         $('#update515MonthHeader').attr('data-value', formatDate(startOfMonth));
     }
     console.log('Fetching schedule for ' + $('#update515MonthHeader').text());
-    $.getJSON("http://localhost:8080/PLANNING/Report515Servlet/" + startOfMonth.getTime())
+    $.getJSON("/PLANNING/Report515Servlet/" + startOfMonth.getTime())
         .fail(function(jqXHR, textStatus, errorThrown) {
             console.log( "Error fetching schedule : " + textStatus + " " + errorThrown );
           })
@@ -481,8 +483,9 @@ function viewSchedule()
     var date = new Date;
     var firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
     $('#scheduleTable tbody').empty();
+    $('#scheduleMonthHeader').text(monthNames[firstDay.getMonth()] + ' ' + firstDay.getFullYear());
     schedule = {}
-    $.getJSON("http://localhost:8080/PLANNING/RestServlet/Balance/:::Person-" + firstDay.getTime() + "-2-1-1", 
+    $.getJSON("/PLANNING/RestServlet/Balance/:::Person-" + firstDay.getTime() + "-2-1-1", 
         function( data ) {
             if (!data['success'] || !data['valid']) return;
             var jsonSchedule = data['data']
@@ -660,8 +663,9 @@ $(document).off('pagebeforeshow', '#update515').on('pagebeforeshow', '#update515
         for (projectName in report515)
         {
             var hours = parseFloat($('#update515Project' + report515[projectName]).val());
-            if (isNaN(hours)) hours = 0;
-            tasks[projectName] = hours.toFixed(1);
+            if (!(isNaN(hours))) {
+                tasks[projectName] = hours.toFixed(1);
+            }
         }
         console.log('Updating 515 for ' + date + ' with: ' + data);
         var r = confirm("Update 515? \n " + JSON.stringify(tasks));
@@ -669,7 +673,7 @@ $(document).off('pagebeforeshow', '#update515').on('pagebeforeshow', '#update515
         {
             $.ajax({
                 type: 'POST',
-                url: "http://localhost:8080/PLANNING/Report515Servlet/" + startOfMonth.getTime(),
+                url: "/PLANNING/Report515Servlet/" + startOfMonth.getTime(),
                 data: JSON.stringify(data),
                 success: function(data) { 
                     var schedule = data['Reported'];
@@ -700,6 +704,11 @@ $(document).bind('pagecreate', '#report', function(evt) {
     createDatePicker('#startDate');
     createDatePicker('#endDate')
 });
+
+$(document).off('pagebeforeshow', '#schedule').on('pagebeforeshow', '#schedule', function(){
+    viewSchedule();
+});
+
 
 // $(document).off('panelbeforeopen', '#addProject').on('panelbeforeopen', '#addProject', function(){
 //     $('#selectAddAsSubproject').empty();
@@ -802,7 +811,6 @@ $(document).bind('pagecreate', '#tracker', function(evt)
     
     $(document).off('click', '#importProjectsButton').on('click', '#importProjectsButton', function(){
         var importedProjects = [];
-        console.log(schedule)
         $.each(schedule, function(projectName, projectSchedule){
             if (!(projectName in projects)) {
                 importedProjects.push(projectName);
@@ -811,11 +819,8 @@ $(document).bind('pagecreate', '#tracker', function(evt)
         if (!$.isEmptyObject(importedProjects)) {
             addProjects(importedProjects);
         }
-    });
-    $(document).off('click', '#fetchScheduleButton').on('click', '#fetchScheduleButton', function(){
-        viewSchedule();
-    });
-    
+        $.mobile.pageContainer.pagecontainer("change", "#tracker", { 'transition' : 'slide', 'reverse' : true });
+    });    
     
     $(document).off('click', '#addProjectButton').on('click', '#addProjectButton', function(){
         var projectName = $('#projectName').val()
