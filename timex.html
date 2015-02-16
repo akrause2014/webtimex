@@ -378,9 +378,13 @@
 </div>
 
 <div data-role="page" id="allRecords" data-title="Timex">
+    <div data-role="header">
+        <a href="#tracker" class="ui-btn ui-btn-icon-left ui-icon-carat-l" data-transition="slide" data-direction="reverse">Timex Database</a>
+        <h1>Export as JSON</h1>
+    </div>
     <div data-role="main" class="ui-content">
         <div>
-            <a id="downloadDatabaseAsJSON" class="ui-btn ui-shadow">Download as JSON</a>
+            <a id="downloadDatabaseAsJSON" class="ui-btn ui-shadow">Download</a>
         </div>
         <div>
             <pre id="databaseContents"></pre>
@@ -392,9 +396,22 @@
     <div data-role="header">
         <a href="#tracker" class="ui-btn ui-btn-icon-left ui-icon-carat-l" data-transition="slide" data-direction="reverse">Tracker</a>
         <h1>Timex Database</h1>
-    </div><!-- /header -->
+    </div>
 
     <div data-role="main" class="ui-content">
+        
+        <h2>Synchronise</h1>
+        <p>
+            Back up the current contents of the browser database in the planning system.
+            Note that backup overwrites any previously stored data.
+            Retrieve updates the database of this browser and may replace existing dates.
+        </p>
+        <div class="ui-bar ui-bar-a ui-corner-all" id="latestBackupTimestamp">
+            Latest backup: Unknown
+        </div>
+        <a id="postPlanningStashButton" class="ui-btn ui-shadow" data-transition="slide">Store backup</a>
+        <a id="getPlanningStashButton" class="ui-btn ui-shadow" data-transition="slide">Retrieve backup</a>
+        
 
         <h2>Export</h1>
         <p>
@@ -497,7 +514,7 @@
         </p>
     </div>
     <div data-role="footer">
-        <a href="#tracker" class="ui-btn ui-btn-right ui-icon-carat-r ui-btn-icon-notext" data-transition="slide">Tracker</a>
+        <a href="#tracker" class="ui-btn ui-btn-right ui-icon-home ui-btn-icon-notext" data-transition="slide">Tracker</a>
     </div>
 </div> 
 

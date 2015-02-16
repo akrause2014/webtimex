@@ -10,6 +10,8 @@ var report515 = {}
 
 var monthNames = [ "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" ];
 
+var webapp = '/PLANNING';
+
 function pretty_time_string(num) 
 {
     return ( num < 10 ? "0" : "" ) + num;
@@ -363,7 +365,7 @@ function parseSchedule(data)
 function fetchScheduleForReport(startDate, endDate, calendarField, block)
 {    
     var start = parseDate(startDate);
-    $.getJSON("/PLANNING/RestServlet/Balance/:::Person-" + start.getTime() + "-" + calendarField + "-" + block + "-1")
+    $.getJSON(webapp + "/RestServlet/Balance/:::Person-" + start.getTime() + "-" + calendarField + "-" + block + "-1")
         .fail(function(jqXHR, textStatus, errorThrown) {
             console.log( "Error fetching schedule : " + textStatus + " " + errorThrown );
             createReport(startDate, endDate, false);
@@ -464,7 +466,7 @@ function fetchScheduleFor515()
         $('#update515MonthHeader').attr('data-value', formatDate(startOfMonth));
     }
     console.log('Fetching schedule for ' + $('#update515MonthHeader').text());
-    $.getJSON("/PLANNING/Report515Servlet/" + startOfMonth.getTime())
+    $.getJSON(webapp + "/Report515Servlet/" + startOfMonth.getTime())
         .fail(function(jqXHR, textStatus, errorThrown) {
             console.log( "Error fetching schedule : " + textStatus + " " + errorThrown );
           })
@@ -485,7 +487,7 @@ function viewSchedule()
     $('#scheduleTable tbody').empty();
     $('#scheduleMonthHeader').text(monthNames[firstDay.getMonth()] + ' ' + firstDay.getFullYear());
     schedule = {}
-    $.getJSON("/PLANNING/RestServlet/Balance/:::Person-" + firstDay.getTime() + "-2-1-1", 
+    $.getJSON(webapp + "/RestServlet/Balance/:::Person-" + firstDay.getTime() + "-2-1-1", 
         function( data ) {
             if (!data['success'] || !data['valid']) return;
             var jsonSchedule = data['data']
@@ -683,13 +685,18 @@ $(document).off('pagebeforeshow', '#update515').on('pagebeforeshow', '#update515
                 tasks[projectName] = hours.toFixed(1);
             }
         }
-        console.log('Updating 515 for ' + date + ' with: ' + data);
-        var r = confirm("Update 515? \n " + JSON.stringify(tasks));
+        console.log('Updating 515 for ' + date);
+        var msg = '';
+        for (var projectName in tasks)
+        {
+            msg += projectName + ': ' + tasks[projectName] + '\n';
+        }
+        var r = confirm("Update 515?\n\n" + msg);
         if (r == true) 
         {
             $.ajax({
                 type: 'POST',
-                url: "/PLANNING/Report515Servlet/" + startOfMonth.getTime(),
+                url: webapp + "/Report515Servlet/" + startOfMonth.getTime(),
                 data: JSON.stringify(data),
                 success: function(data) { 
                     var schedule = data['Reported'];
@@ -723,6 +730,18 @@ $(document).bind('pagecreate', '#report', function(evt) {
 
 $(document).off('pagebeforeshow', '#schedule').on('pagebeforeshow', '#schedule', function(){
     viewSchedule();
+});
+
+$(document).off('pagebeforeshow', '#database').on('pagebeforeshow', '#database', function(){
+    $.getJSON(webapp + "/StashServlet")
+    .fail(function(jqXHR, textStatus, errorThrown) {
+        console.log( "Error retrieving backup: " + textStatus + " " + errorThrown );
+      })
+    .done(function(data){
+        var timestamp = data['Timestamp'];
+        console.log("Retrieved backup with timestamp " + timestamp);
+        $('#latestBackupTimestamp').text('Latest Backup: ' + timestamp);
+    });
 });
 
 
@@ -1190,7 +1209,7 @@ function retrieveReport(startDate, endDate, oncomplete)
     index.openCursor(range).onsuccess = function(evt) {
          var cursor = evt.target.result;
          if (cursor) {
-             console.log('Report: Found timex data for ' + cursor.value['date']);
+             // console.log('Report: Found timex data for ' + cursor.value['date']);
              storedProjects = cursor.value['projects']
              for (var projectName in storedProjects)
              {
@@ -1395,8 +1414,8 @@ function storeEditedTimex(date, editedProjects)
     }
 }
 
-
-$(document).off('click', '#exportDataButton').on('click', '#exportDataButton', function(){
+function readAllData(oncomplete_fn)
+{
     var transaction = db.transaction(["timex"], "readonly");
     var objectStore = transaction.objectStore("timex");
 
@@ -1427,13 +1446,97 @@ $(document).off('click', '#exportDataButton').on('click', '#exportDataButton', f
     }
     transaction.oncomplete = function(e)
     {
-        var json = JSON.stringify(data, null, 4);
-        // console.log(json);
-        $('#databaseContents').text(json);
-        document.getElementById('downloadDatabaseAsJSON').href="data:text/json," + JSON.stringify(data);
-        document.getElementById('downloadDatabaseAsJSON').download = 'timex_db.jsn';
+        oncomplete_fn(data);
     };
+    
+}
+
+function writeToBackup(data)
+{
+    var timestamp = new Date;
+    data['Timestamp'] = timestamp.toISOString();
+    $.post( webapp + "/StashServlet", JSON.stringify(data), function() {
+      console.log('Successfully stored backup with timestamp ' + timestamp.toISOString());
+      $('#latestBackupTimestamp').text('Latest Backup: ' + timestamp.toISOString())
+    })
+    .fail(function(jqXHR, textStatus, errorThrown) {
+        console.log( "Error storing backup: " + textStatus + " " + errorThrown );
+        $('#latestBackupTimestamp').text('Failed to store backup. Please check with the service provider.');
+    });
+}
+
+function importFromBackup()
+{
+    $.getJSON(webapp + "/StashServlet")
+    .fail(function(jqXHR, textStatus, errorThrown) {
+        console.log( "Error retrieving backup: " + textStatus + " " + errorThrown );
+        alert('Failed to retrieve backup. Please check with the service provider.');
+      })
+    .done(function(data){
+        var timestamp = data['Timestamp'];
+        console.log("Retrieved backup with timestamp " + timestamp);
+        delete data['Timestamp'];
+        var numRecords = importData(data);
+        console.log('Imported ' + numRecords + " records into the database.");
+        $('#latestBackupTimestamp').text('Imported ' + numRecords + " day(s) into the database. Latest Backup: " + timestamp);
+    });
+}
+
+function importData(data)
+{
+    var numRecords = 0;
+    for (var key in data) {
+        date = new Date(key)
+        if (!date || formatDate(date) != key) 
+        {
+            continue;
+        }
+        var imported = {}
+        for (var p in data[key])
+        {
+            imported[p] = {}
+            var value = data[key][p]
+            if($.type(value) === "string")
+            {
+                var dur = durationToSeconds(value);
+                if (isNaN(dur)) dur = 0;
+                imported[p]['duration'] = dur;
+                imported[p]['name'] = p;
+            }
+        }
+        if (!$.isEmptyObject(imported))
+        {
+            storeEditedTimex(key, imported)
+            numRecords++;
+        }
+    }
+    return numRecords;
+}
+
+function createJSONExport(data)
+{
+    var json = JSON.stringify(data, null, 4);
+    // console.log(json);
+    $('#databaseContents').text(json);
+    document.getElementById('downloadDatabaseAsJSON').href="data:text/json," + JSON.stringify(data);
+    document.getElementById('downloadDatabaseAsJSON').download = 'timex_db.jsn';
+}
+
+$(document).off('click', '#postPlanningStashButton').on('click', '#postPlanningStashButton', function(){
+    readAllData(writeToBackup);
 });
+$(document).off('click', '#getPlanningStashButton').on('click', '#getPlanningStashButton', function(){
+    var r = confirm("Import backup? (This may replace current records.)");
+    if (r == true) 
+    {    
+        importFromBackup();
+    }
+});
+
+$(document).off('click', '#exportDataButton').on('click', '#exportDataButton', function(){
+    readAllData(createJSONExport);
+});
+
 $(document).off('click', '#importDataButton').on('click', '#importDataButton', function(){
     var files = document.getElementById('importDataFile').files;
     if (!files[0]) return;
@@ -1452,32 +1555,7 @@ $(document).off('click', '#importDataButton').on('click', '#importDataButton', f
         }
         console.log('Parsed JSON successfully')
         
-        var numRecords = 0;
-        for (var key in json) {
-            date = new Date(key)
-            if (!date || formatDate(date) != key) 
-            {
-                continue;
-            }
-            var imported = {}
-            for (var p in json[key])
-            {
-                imported[p] = {}
-                var value = json[key][p]
-                if($.type(value) === "string")
-                {
-                    var dur = durationToSeconds(value);
-                    if (isNaN(dur)) dur = 0;
-                    imported[p]['duration'] = dur;
-                    imported[p]['name'] = p;
-                }
-            }
-            if (!$.isEmptyObject(imported))
-            {
-                storeEditedTimex(key, imported)
-                numRecords++;
-            }
-        }
+        var numRecords = importData(json);
         console.log('Imported ' + numRecords + ' records into the database.');
         alert('Imported ' + numRecords + " day(s) into the database.");
     }
