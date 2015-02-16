@@ -212,7 +212,7 @@
 
     <div data-role="header">
         <a href="#tracker" class="ui-btn ui-btn-icon-left ui-icon-carat-l" data-transition="slide" data-direction="reverse">Tracker</a>
-        <h1>515</h1>
+        <h1>Report Hours</h1>
     </div><!-- /header -->
 
     <div role="main" class="ui-content">
@@ -379,7 +379,7 @@
 
 <div data-role="page" id="allRecords" data-title="Timex">
     <div data-role="header">
-        <a href="#tracker" class="ui-btn ui-btn-icon-left ui-icon-carat-l" data-transition="slide" data-direction="reverse">Timex Database</a>
+        <a href="#database" class="ui-btn ui-btn-icon-left ui-icon-carat-l" data-transition="slide" data-direction="reverse">Timex Database</a>
         <h1>Export as JSON</h1>
     </div>
     <div data-role="main" class="ui-content">
@@ -490,6 +490,11 @@
             You cannot see the data from another browser, nor can anyone else access your data.
             If accessing the page from another browser a new empty data store is created.
             See <i>Data Store</i> below for synchronising the contents of the data store with another instance.
+            The contents of the data store may be deleted if you wipe the browser's cache.
+        </p>
+        <p>
+            To view the current schedule in the planning system select "View Schedule" from the menu.
+            The tasks from the schedule can be imported into the current project list.
         </p>
         <h3>Editing</h3>
         <p>
@@ -498,11 +503,24 @@
             Select the date or use the buttons next to the text input to move to the next or previous day of the current date.
             Click "Save" to update the record, or "Cancel" to reset the times to the previous snapshot.
         </p>
+        <p>
+            If a date has no record in the database the displayed list is empty. 
+            Tasks can be added manually or select "Add Current Projects" to add all tasks from today's tracker.
+            Click "Clear All" to remove all projects from the list.
+            Make sure to click "Save" to store the updated record, or "Cancel" to undo all changes.
+        </p>
         <h3>Report</h3>
         <p>
             To create a report select "Create Report" in the menu and select a start date and end date. 
             Or select one of the date ranges below, for last week or last month for example.
-            The report can be saved as a JSON file.
+            The report can be displayed and saved in a text format and as JSON.
+        </p>
+        <p>
+            To report actual hours worked on projects to the planning system, select "Report 515" from the menu.
+            Accept or edit the recorded time for each project against the suggested times 
+            and click "Submit 515" to update the planning database. 
+            The reported hours are displayed in the column "Reported" of the 515 table.
+            If a project is not named in the assigned schedule the reporting for this project will fail.
         </p>
         <h3>Data Store</h3>
         <p>

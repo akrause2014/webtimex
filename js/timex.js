@@ -558,19 +558,27 @@ $(document).bind('pagecreate', '#editProjects', function(evt)
         if (editedDate)
         {
             var msg = '';
-            for (projectName in editedProjects)
+            var toRemove = [];
+            for (var projectName in editedProjects)
             {
                 var projectId = editedProjects[projectName]['index'];
                 var durationStr = $("#editProjectDuration-" + projectId).val();
+                if (!durationStr) {
+                    toRemove.push(projectName);
+                    continue;
+                }
                 var duration = durationToSeconds(durationStr);
                 if (isNaN(duration))
                 {
-                    alert('Could not parse time for project ' + projectName
+                    alert('Could not parse time ' + durationStr + ' for project ' + projectName
                           + '.\nPlease use the format "hh:mm".');
                     return;
                 }
                 editedProjects[projectName]['duration'] = duration;
             }
+            toRemove.map(function(projectName) {
+                delete editedProjects[projectName];
+            });
             storeEditedTimex(editedDate, editedProjects)
             editedProjects = {}
             editedDate = null;
@@ -653,7 +661,6 @@ $(document).bind('pagecreate', '#editProjects', function(evt)
     // });
 });
 
-
 $(document).off('pagebeforeshow', '#update515').on('pagebeforeshow', '#update515', function(){
     
     $(document).off('click', '#update515PrevMonthButton').on('click', '#update515PrevMonthButton', function(){
@@ -703,7 +710,12 @@ $(document).off('pagebeforeshow', '#update515').on('pagebeforeshow', '#update515
                     var failed = data['Failed'];
                     if (!$.isEmptyObject(failed))
                     {
-                        alert("Updates failed for tasks: " + JSON.stringify(failed));
+                        var msg = '';
+                        for (var projectName in failed)
+                        {
+                            msg += '- ' + projectName + '\n';
+                        }
+                        alert("Updates failed for tasks:\n" + msg);
                     }
                     fetchScheduleFor515();
                 },
@@ -1455,7 +1467,7 @@ function writeToBackup(data)
 {
     var timestamp = new Date;
     data['Timestamp'] = timestamp.toISOString();
-    $.post( webapp + "/StashServlet", JSON.stringify(data), function() {
+    $.post(webapp + "/StashServlet", JSON.stringify(data), function() {
       console.log('Successfully stored backup with timestamp ' + timestamp.toISOString());
       $('#latestBackupTimestamp').text('Latest Backup: ' + timestamp.toISOString())
     })
