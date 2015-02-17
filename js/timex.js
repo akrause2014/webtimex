@@ -745,14 +745,12 @@ $(document).off('pagebeforeshow', '#schedule').on('pagebeforeshow', '#schedule',
 });
 
 $(document).off('pagebeforeshow', '#database').on('pagebeforeshow', '#database', function(){
-    $.getJSON(webapp + "/StashServlet")
-    .fail(function(jqXHR, textStatus, errorThrown) {
-        console.log( "Error retrieving backup: " + textStatus + " " + errorThrown );
-      })
-    .done(function(data){
-        var timestamp = data['Timestamp'];
-        console.log("Retrieved backup with timestamp " + timestamp);
+    $.get(webapp + "/StashServlet/timestamp", function(timestamp){
+        console.log("Latest backup: " + timestamp);
         $('#latestBackupTimestamp').text('Latest Backup: ' + timestamp);
+    })
+    .fail(function(jqXHR, textStatus, errorThrown) {
+        console.log( "Error retrieving backup timestamp: " + textStatus + " " + errorThrown );
     });
 });
 
@@ -1467,13 +1465,14 @@ function writeToBackup(data)
 {
     var timestamp = new Date;
     data['Timestamp'] = timestamp.toISOString();
-    $.post(webapp + "/StashServlet", JSON.stringify(data), function() {
-      console.log('Successfully stored backup with timestamp ' + timestamp.toISOString());
-      $('#latestBackupTimestamp').text('Latest Backup: ' + timestamp.toISOString())
-    })
+    $.post(webapp + "/StashServlet?timestamp=" + timestamp.getTime(), JSON.stringify(data))
     .fail(function(jqXHR, textStatus, errorThrown) {
         console.log( "Error storing backup: " + textStatus + " " + errorThrown );
         $('#latestBackupTimestamp').text('Failed to store backup. Please check with the service provider.');
+    })
+    .done(function(response){
+        console.log('Successfully stored backup with timestamp ' + response);
+        $('#latestBackupTimestamp').text('Latest Backup: ' + response)
     });
 }
 
