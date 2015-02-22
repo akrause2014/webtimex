@@ -103,6 +103,7 @@
     .ui-datepicker-inline .ui-datepicker-calendar .ui-btn { width: auto; }
     </style>
     
+    <script>var webapp = "<%=request.getContextPath()%>"</script>
     <script src="js/timex.js"></script>
 
 <body>
@@ -268,11 +269,12 @@
             <a href="#reportResult" class="ui-btn" id="reportLastMonthButton" data-transition="slide">Last Month</a>
         </div>
         
+        <!--
         <div>
             <input type="checkbox" name="checkbox-fetchSchedule" id="checkbox-fetchSchedule" class="ui-btn-icon-left">
             <label for="checkbox-fetchSchedule">Fetch Schedule</label>
         </div>
-        
+        -->
     </div>
 
 </div><!-- /page -->

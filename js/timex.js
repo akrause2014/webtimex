@@ -10,7 +10,7 @@ var report515 = {}
 
 var monthNames = [ "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" ];
 
-var webapp = '/PLANNING';
+//var webapp = '/PLANNING';
 
 function pretty_time_string(num) 
 {
@@ -102,7 +102,7 @@ function readProjects()
 {
     today = new Date
     date = formatDate(today)
-    
+ 
     console.log('Loading projects for date ' + date)
     // document.querySelector("#listview").innerHTML = s;
     $('#listview').empty().append(createProjectListHeader());
@@ -431,7 +431,7 @@ function update515Table(report, schedule)
         msg += '<td style="text-align:right;">' + suggested + '</td>';
         msg += '<td style="text-align:right;">' + reported + '</td>';
         msg += '<td style="text-align:right;">';
-        msg += '<input style="text-align:right;" type="text" id="update515Project' + i + '" value="';
+        msg += '<input class="task515input" style="text-align:right;" type="text" id="update515Project' + i + '" value="';
         msg += secondsToHours(durationInSeconds);
         msg += '"></input></td>';
         msg += '</tr>';
@@ -443,7 +443,7 @@ function update515Table(report, schedule)
     msg = '<tr><th>Total</th><td></td>';
     msg += '<td style="text-align:right;">' + suggestedTotal + '</td>';
     msg += '<td style="text-align:right;">' + reportedTotal.toFixed(1) + '</td>';
-    msg += '<th style="text-align:right;">' + secondsToHours(total_duration) + '</th>';
+    msg += '<th id="task515total" style="text-align:right;">' + secondsToHours(total_duration) + '</th>';
     msg += '</tr>';
     $('#update515Table tbody').append(msg);
     $('#update515Table').table('refresh');
@@ -663,6 +663,15 @@ $(document).bind('pagecreate', '#editProjects', function(evt)
 
 $(document).off('pagebeforeshow', '#update515').on('pagebeforeshow', '#update515', function(){
     
+    $(document).off('input', '.task515input').on('input', '.task515input', function() {
+        var newvalue = $(this).val();
+        var total = 0;
+        $('.task515input').each(function(){
+            var hours = parseFloat($(this).val());
+            if (!(isNaN(hours))) total += hours;
+        });
+        $('#task515total').text(total.toFixed(1));
+    });
     $(document).off('click', '#update515PrevMonthButton').on('click', '#update515PrevMonthButton', function(){
         var date = $('#update515MonthHeader').attr('data-value');
         var startOfMonth = parseDate(date);
@@ -922,16 +931,16 @@ $(document).bind('pagecreate', '#tracker', function(evt)
     function createReportWithSchedule(startDate, endDate, calendarField, block)
     {
         if (!startDate || !endDate) return;
-        if ($('#checkbox-fetchSchedule').is(':checked'))
-        {
-            console.log('Getting schedule from server');
-            fetchScheduleForReport(startDate, endDate, calendarField, block);
+        // if ($('#checkbox-fetchSchedule').is(':checked'))
+        // {
+        console.log('Getting schedule from server');
+        fetchScheduleForReport(startDate, endDate, calendarField, block);
             // $.mobile.changePage("#reportResult");
-        }
-        else
-        {
-            createReport(startDate, endDate, false);
-            // $.mobile.changePage("#reportResult");
+        // }
+        // else
+        // {
+        //     createReport(startDate, endDate, false);
+        //     // $.mobile.changePage("#reportResult");
        }
     }
     $(document).off('click', '#reportSubmitButton').on('click', '#reportSubmitButton', function(){
@@ -1225,7 +1234,7 @@ function retrieveReport(startDate, endDate, oncomplete)
              {
                  var duration = storedProjects[projectName]['duration'];
                  if (isNaN(duration)) duration = 0;
-                 console.log('Project ' + projectName + ': ' + duration);
+                 // console.log('Project ' + projectName + ': ' + duration);
                  if (projectName in report)
                  {
                      report[projectName] += duration;
@@ -1241,7 +1250,7 @@ function retrieveReport(startDate, endDate, oncomplete)
                  var ap = cursor.value['activeProject']
                  var st = cursor.value['startTime']
                  report[ap] += getDurationOfActiveProject(date, st)
-                 console.log('Active project ' + projectName + ': ' + report[ap]);
+                 // console.log('Active project ' + projectName + ': ' + report[ap]);
              }
              cursor.continue();
          }
