@@ -941,7 +941,7 @@ $(document).bind('pagecreate', '#tracker', function(evt)
         // {
         //     createReport(startDate, endDate, false);
         //     // $.mobile.changePage("#reportResult");
-       }
+        // }
     }
     $(document).off('click', '#reportSubmitButton').on('click', '#reportSubmitButton', function(){
         var startDate = $('#startDate').val();
