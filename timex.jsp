@@ -254,6 +254,11 @@
 
     <div role="main" class="ui-content">
         
+        <div>
+            <input type="checkbox" name="checkbox-fetchSchedule" id="checkbox-fetchSchedule" class="ui-btn-icon-left">
+            <label for="checkbox-fetchSchedule">Fetch Schedule</label>
+        </div>
+
         <h3>Select a date range:</h3>
         <div>
             <input type="text" data-role="date" id="startDate">
@@ -269,12 +274,6 @@
             <a href="#reportResult" class="ui-btn" id="reportLastMonthButton" data-transition="slide">Last Month</a>
         </div>
         
-        <!--
-        <div>
-            <input type="checkbox" name="checkbox-fetchSchedule" id="checkbox-fetchSchedule" class="ui-btn-icon-left">
-            <label for="checkbox-fetchSchedule">Fetch Schedule</label>
-        </div>
-        -->
     </div>
 
 </div><!-- /page -->
@@ -309,12 +308,16 @@
             </div>
             
             <div id="tabReportHTML" class="ui-body-d ui-content">
+                <ul data-role="listview" data-inset="true" data-icon="false" id="reportListView"></ul>
+                <ul data-role="listview" data-inset="true" data-icon="false" id="reportTotalListView"></ul>
+            <!--    
                 <table data-role="table" id="reportTable" data-mode="reflow" class="ui-responsive project-table">
                     <thead>
                     </thead>
                     <tbody>
                     </tbody>
                 </table>
+            -->
             </div>
             <div id="tabReportJSON">
                 <pre id="reportJSON">

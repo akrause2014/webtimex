@@ -931,17 +931,17 @@ $(document).bind('pagecreate', '#tracker', function(evt)
     function createReportWithSchedule(startDate, endDate, calendarField, block)
     {
         if (!startDate || !endDate) return;
-        // if ($('#checkbox-fetchSchedule').is(':checked'))
-        // {
-        console.log('Getting schedule from server');
-        fetchScheduleForReport(startDate, endDate, calendarField, block);
+        if ($('#checkbox-fetchSchedule').is(':checked'))
+        {
+            console.log('Getting schedule from server');
+            fetchScheduleForReport(startDate, endDate, calendarField, block);
             // $.mobile.changePage("#reportResult");
-        // }
-        // else
-        // {
-        //     createReport(startDate, endDate, false);
-        //     // $.mobile.changePage("#reportResult");
-        // }
+        }
+        else
+        {
+            createReport(startDate, endDate, false);
+            // $.mobile.changePage("#reportResult");
+        }
     }
     $(document).off('click', '#reportSubmitButton').on('click', '#reportSubmitButton', function(){
         var startDate = $('#startDate').val();
@@ -1104,22 +1104,60 @@ function createReport(startDate, endDate, showSchedule)
 
 function updateReportTable(report, showSchedule)
 {
+    
+    
     console.log('Creating report for ' + startDate + " to " + endDate + ", show schedule? " + showSchedule);
     $('#report_date_range').text(startDate + ' to ' + endDate)
     
     var total_duration = 0;
     var reportWithDurations = {}
-    var msg = '<tr><th>Project</th><th>Time</th>';
+    // var msg = '<tr><th>Project</th><th>Time</th>';
+    // if (showSchedule)
+    // {
+    //     msg += '<th style="text-align:right;">Minimum</th>';
+    //     msg += '<th style="text-align:right;">Suggested</th>';
+    // }
+    // msg += '</tr>';
+    // $('#reportTable thead').empty().append(msg);
+    // if(typeof $('#reportTable').table() !== "undefined")
+    //     $('#reportTable').table('refresh');
+    // $('#reportTable tbody').empty();
+    
     if (showSchedule)
     {
-        msg += '<th style="text-align:right;">Minimum</th>';
-        msg += '<th style="text-align:right;">Suggested</th>';
+        widtha = "40%";
+        widthb = "20%";
+        widthc = "20%";
+        widthd = "20%";
     }
-    msg += '</tr>';
-    $('#reportTable thead').empty().append(msg);
-    if(typeof $('#reportTable').table() !== "undefined")
-        $('#reportTable').table('refresh');
-    $('#reportTable tbody').empty();
+    else
+    {
+        widtha = "70%";
+        widthb = "30%";
+    }
+    msg = "<li class=\"ui-li-static ui-body-inherit ui-first-child\">";
+    if (showSchedule)
+    {
+        msg += "<div class=\"ui-grid-c\">"
+    }
+    else
+    {
+        msg += "<div class=\"ui-grid-a\">"
+    }
+    msg += "<div class=\"ui-block-a\" style=\"width:" + widtha + "\">"
+        + "<div class=\"ui-bar\"><h3>Project</h3></div>"
+        + "</div>"
+        + "<div class=\"ui-block-b\" style=\"width:" + widthb + "\">"
+        + "<div class=\"ui-bar\"><h3>Time</h3></div></div>"
+    if (showSchedule)
+    {
+        msg += "<div class=\"ui-block-b\" style=\"width:" + widthc + "\">"
+            + "<div class=\"ui-bar\"><h3>Minimum</h3></div></div>";
+        msg += "<div class=\"ui-block-b\" style=\"width:" + widthd + "\">"
+            + "<div class=\"ui-bar\"><h3>Suggested</h3></div></div>";
+    }
+    msg += "</div></li>";
+    $('#reportListView').empty().append(msg);
     var suggestedTotal = 0;
     for (var projectName in report)
     {
@@ -1127,9 +1165,23 @@ function updateReportTable(report, showSchedule)
         if (isNaN(durationInSeconds)) durationInSeconds = 0;
         reportWithDurations[projectName] = secondsToDuration(durationInSeconds, false);
         total_duration += durationInSeconds;
-        msg = "<tr><td>" + projectName + '</td>';
         var duration = secondsToDuration(durationInSeconds, false);
-        msg += '<td>' + duration + '</td>';
+
+        msg =  "<li>"
+        if (showSchedule)
+        {
+            msg += "<a href=\"#\"><div class=\"ui-grid-c\">";
+        }
+        else
+        {
+            msg += "<a href=\"#\"><div class=\"ui-grid-a\">";
+        }
+        msg += "<div class=\"ui-block-a\" style=\"width:" + widtha + "\">"
+        msg += "<div class=\"ui-bar\">" + projectName + "</div>"
+        msg += "</div>"
+        msg += "<div class=\"ui-block-b\" style=\"width:" + widthb + "\">"
+        msg += "<div class=\"ui-bar\""
+        msg += ">" + duration + "</div></div>"
         if (showSchedule)
         {
             var minimum = '--:--';
@@ -1151,20 +1203,84 @@ function updateReportTable(report, showSchedule)
                     suggested = pretty_time_string(sugtime) + ':00';
                 }
             }
-            msg += '<td style="text-align:right;">' + minimum + '</td>';
-            msg += '<td style="text-align:right;">' + suggested + '</td>';
+            msg += "<div class=\"ui-block-c\" style=\"width:" + widthc + "\">"
+            msg += "<div class=\"ui-bar\""
+            msg += ">" + minimum + "</div></div>"
+            msg += "<div class=\"ui-block-d\" style=\"width:" + widthd + "\">"
+            msg += "<div class=\"ui-bar\""
+            msg += ">" + suggested + "</div></div>"
         }
-        msg += '</tr>';
-        $('#reportTable tbody').append(msg);
-        $('#reportTable').table('refresh');
+        
+        msg += "</div></a></li>";
+        $('#reportListView').append(msg);
+        $('#reportListView').listview('refresh');
+        
+        // msg = "<tr><td>" + projectName + '</td>';
+        // msg += '<td>' + duration + '</td>';
+        // if (showSchedule)
+        // {
+        //     var minimum = '--:--';
+        //     var suggested = '--:--';
+        //     if (projectName in schedule)
+        //     {
+        //         projSched = schedule[projectName];
+        //         if (('Minimum') in projSched)
+        //         {
+        //             var mintime = parseInt(schedule[projectName]['Minimum']);
+        //             if (isNaN(mintime)) mintime = 0;
+        //             minimum = pretty_time_string(mintime) + ':00';
+        //         }
+        //         if (('Suggested') in projSched)
+        //         {
+        //             var sugtime = parseInt(schedule[projectName]['Suggested']);
+        //             if (isNaN(sugtime)) sugtime = 0;
+        //             suggestedTotal += sugtime;
+        //             suggested = pretty_time_string(sugtime) + ':00';
+        //         }
+        //     }
+        //     msg += '<td style="text-align:right;">' + minimum + '</td>';
+        //     msg += '<td style="text-align:right;">' + suggested + '</td>';
+        // }
+        // msg += '</tr>';
+        // $('#reportTable tbody').append(msg);
+        // $('#reportTable').table('refresh');
     }
-    msg = '<tr><th>Total</th><th>' + secondsToDuration(total_duration, false) + '</th>';
+    
+    
+    msg =  "<li>"
     if (showSchedule)
-        msg += '<td></td><td style="text-align:right;">' + pretty_time_string(suggestedTotal) + ':00</td>';
-    msg += '</tr>';
-    reportWithDurations['Total'] = secondsToDuration(total_duration, false);
-    $('#reportTable tbody').append(msg);
-    $('#reportTable').table('refresh');
+    {
+        msg += "<a href=\"#\"><div class=\"ui-grid-c\">";
+    }
+    else
+    {
+        msg += "<a href=\"#\"><div class=\"ui-grid-a\">";
+    }
+    msg += "<div class=\"ui-block-a\" style=\"width:" + widtha + "\">"
+    msg += "<div class=\"ui-bar\">Total</div>"
+    msg += "</div>"
+    msg += "<div class=\"ui-block-b\" style=\"width:" + widthb + "\">"
+    msg += "<div class=\"ui-bar\""
+    msg += ">" + secondsToDuration(total_duration, false) + "</div></div>"
+    if (showSchedule)
+    {
+        msg += "<div class=\"ui-block-c\" style=\"width:" + widthc + "\">"
+        msg += "<div class=\"ui-bar\""
+        msg += "></div></div>"
+        msg += "<div class=\"ui-block-d\" style=\"width:" + widthd + "\">"
+        msg += "<div class=\"ui-bar\""
+        msg += ">" + pretty_time_string(suggestedTotal) + ":00</div></div>"
+    }
+    $('#reportTotalListView').empty().append(msg);
+    $('#reportTotalListView').listview('refresh');
+    
+    // msg = '<tr><th>Total</th><th>' + secondsToDuration(total_duration, false) + '</th>';
+    // if (showSchedule)
+    //     msg += '<td></td><td style="text-align:right;">' + pretty_time_string(suggestedTotal) + ':00</td>';
+    // msg += '</tr>';
+    // reportWithDurations['Total'] = secondsToDuration(total_duration, false);
+    // $('#reportTable tbody').append(msg);
+    // $('#reportTable').table('refresh');
     
     // write JSON 
     var json = JSON.stringify(reportWithDurations, null, 4);
