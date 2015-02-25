@@ -339,12 +339,18 @@ function parseSchedule(data)
     var columns;
     var total;
     $.each( jsonSchedule, function( key, projSched ) {
+        if (key == "Task")
+        {
+            columns = projSched;
+        }
+    });
+    $.each( jsonSchedule, function( key, projSched ) {
         var projectName = key;
         var isHeader = (key == "Task");
         var isFooter = (key == "Total");
         if (isHeader)
         {
-            columns = projSched;
+            // columns = projSched;
         }
         else if (isFooter)
         {
@@ -432,7 +438,12 @@ function update515Table(report, schedule)
         msg += '<td style="text-align:right;">' + reported + '</td>';
         msg += '<td style="text-align:right;">';
         msg += '<input class="task515input" style="text-align:right;" type="text" id="update515Project' + i + '" value="';
-        msg += secondsToHours(durationInSeconds);
+        if (isNaN(durationInSeconds)) {
+            msg += 'None';
+        }
+        else {
+            msg += secondsToHours(durationInSeconds);
+        }
         msg += '"></input></td>';
         msg += '</tr>';
         if (projectName != "Leave") report515[projectName] = i;
@@ -497,9 +508,7 @@ function viewSchedule()
             $('#importProjectsButton').button('enable');
             var columns;
             $.each( jsonSchedule, function( key, projSched ) {
-                var projectName = key;
                 var isHeader = (key == "Task");
-                var isFooter = (key == "Total");
                 var rowMsg;
                 if (isHeader)
                 {
@@ -512,6 +521,16 @@ function viewSchedule()
                     $('#scheduleTable thead').append(rowMsg);
                     $('#scheduleTable').table('refresh');
                 }
+            });
+            $.each( jsonSchedule, function( key, projSched ) {
+                var projectName = key;
+                var isHeader = (key == "Task");
+                var isFooter = (key == "Total");
+                var rowMsg;
+                if (isHeader)
+                {
+                    // already done
+                }
                 else if (isFooter)
                 {
                     rowMsg = '<tr><th>' + projectName + '</th>'
@@ -521,7 +540,7 @@ function viewSchedule()
                     rowMsg += '</tr>'
                     totalRow = rowMsg;
                 }
-                else 
+                else
                 {
                     projSchedule = {};
                     schedule[projectName] = projSchedule;
@@ -534,7 +553,6 @@ function viewSchedule()
                     $('#scheduleTable tbody').append(rowMsg);
                     $('#scheduleTable').table('refresh');
                 }
-                
             });
             $('#scheduleTable tbody').append(totalRow);
             $('#scheduleTable').table('refresh');
