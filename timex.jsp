@@ -286,19 +286,10 @@
     </div><!-- /header -->
 
     <div role="main" class="ui-content">
-<!--
-        <table data-role="table" id="reportTable" data-mode="reflow" class="ui-responsive project-table">
-            <thead>
-            </thead>
-            <tbody>
-            </tbody>
-        </table>
-        
-        <a id="downloadReportAsJSON" class="ui-btn ui-shadow">Download as JSON</a>
--->
 
         <div data-role="tabs" id="reportFormat">
             
+            <input id="reportDurations" type="hidden">
             <div data-role="navbar">
                 <ul>
                     <li><a href="#tabReportHTML" class="ui-btn-active">HTML</a></li>
@@ -310,14 +301,6 @@
             <div id="tabReportHTML" class="ui-body-d ui-content">
                 <ul data-role="listview" data-inset="true" data-icon="false" id="reportListView"></ul>
                 <ul data-role="listview" data-inset="true" data-icon="false" id="reportTotalListView"></ul>
-            <!--    
-                <table data-role="table" id="reportTable" data-mode="reflow" class="ui-responsive project-table">
-                    <thead>
-                    </thead>
-                    <tbody>
-                    </tbody>
-                </table>
-            -->
             </div>
             <div id="tabReportJSON">
                 <pre id="reportJSON">
@@ -330,6 +313,16 @@
                 <a id="downloadReportAsText" class="ui-btn ui-shadow">Download as Text</a>
             </div>
         </div>
+        
+        <form>
+            <fieldset data-role="controlgroup" data-type="horizontal" id="reportDisplayStyle">
+                <legend>Display style:</legend>
+                <input type="radio" name="reportDisplayStyle" id="reportDisplayStyleMinutes" value="minutes" checked="checked">
+                <label for="reportDisplayStyleMinutes">HH:mm</label>
+                <input type="radio" name="reportDisplayStyle" id="reportDisplayStyleFractions" value="fractions">
+                <label for="reportDisplayStyleFractions">HH.f</label>
+            </fieldset>
+        </form>
     </div>
 
 </div>
