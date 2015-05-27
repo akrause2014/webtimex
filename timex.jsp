@@ -256,7 +256,7 @@
         
         <div>
             <input type="checkbox" name="checkbox-fetchSchedule" id="checkbox-fetchSchedule" class="ui-btn-icon-left">
-            <label for="checkbox-fetchSchedule">Fetch Schedule</label>
+            <label for="checkbox-fetchSchedule">Show Schedule</label>
         </div>
 
         <h3>Select a date range:</h3>
