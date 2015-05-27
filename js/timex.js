@@ -1232,38 +1232,7 @@ function updateReportTable(report, showSchedule)
         msg += "</div></a></li>";
         $('#reportListView').append(msg);
         $('#reportListView').listview('refresh');
-        
-        // msg = "<tr><td>" + projectName + '</td>';
-        // msg += '<td>' + duration + '</td>';
-        // if (showSchedule)
-        // {
-        //     var minimum = '--:--';
-        //     var suggested = '--:--';
-        //     if (projectName in schedule)
-        //     {
-        //         projSched = schedule[projectName];
-        //         if (('Minimum') in projSched)
-        //         {
-        //             var mintime = parseInt(schedule[projectName]['Minimum']);
-        //             if (isNaN(mintime)) mintime = 0;
-        //             minimum = pretty_time_string(mintime) + ':00';
-        //         }
-        //         if (('Suggested') in projSched)
-        //         {
-        //             var sugtime = parseInt(schedule[projectName]['Suggested']);
-        //             if (isNaN(sugtime)) sugtime = 0;
-        //             suggestedTotal += sugtime;
-        //             suggested = pretty_time_string(sugtime) + ':00';
-        //         }
-        //     }
-        //     msg += '<td style="text-align:right;">' + minimum + '</td>';
-        //     msg += '<td style="text-align:right;">' + suggested + '</td>';
-        // }
-        // msg += '</tr>';
-        // $('#reportTable tbody').append(msg);
-        // $('#reportTable').table('refresh');
     }
-    
     
     msg =  "<li>"
     if (showSchedule)
@@ -1292,14 +1261,6 @@ function updateReportTable(report, showSchedule)
     $('#reportTotalListView').empty().append(msg);
     $('#reportTotalListView').listview('refresh');
     
-    // msg = '<tr><th>Total</th><th>' + secondsToDuration(total_duration, false) + '</th>';
-    // if (showSchedule)
-    //     msg += '<td></td><td style="text-align:right;">' + pretty_time_string(suggestedTotal) + ':00</td>';
-    // msg += '</tr>';
-    // reportWithDurations['Total'] = secondsToDuration(total_duration, false);
-    // $('#reportTable tbody').append(msg);
-    // $('#reportTable').table('refresh');
-    
     // write JSON 
     var json = JSON.stringify(reportWithDurations, null, 4);
     $('#reportJSON').text(json);
@@ -1309,13 +1270,13 @@ function updateReportTable(report, showSchedule)
     document.getElementById('downloadReportAsJSON').download = 'Timex_' + startDate + "_" + endDate + ".jsn";
     
     // write formatted text
-    reportAsText(reportWithDurations);
+    reportAsText(reportWithDurations, secondsToDuration(total_duration, false));
 }
 
-function reportAsText(reportWithDurations)
+function reportAsText(reportWithDurations, total_duration)
 {
-    var maxPN = 0;
-    var maxD = 0;
+    var maxPN = "Total".length;
+    var maxD = total_duration.length;
     for (var projectName in reportWithDurations)
     {
         maxPN = Math.max(maxPN, projectName.length);
@@ -1329,9 +1290,10 @@ function reportAsText(reportWithDurations)
     text += hline;
     for (var projectName in reportWithDurations)
     {
-        if (projectName == 'Total') text += hline;
         text += padString(projectName, reportWithDurations[projectName], textLength) + '\n';
     }
+    text += hline
+    text += padString('Total', total_duration, textLength) + '\n';
     $('#reportText').text(text);
     var blob = new Blob([text], {type: "text/plain"});
     var url  = URL.createObjectURL(blob);
