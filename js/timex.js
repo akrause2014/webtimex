@@ -1234,6 +1234,7 @@ function updateReportTable(report, showSchedule)
         $('#reportListView').listview('refresh');
     }
     
+    var durationStr = secondsToDuration(total_duration, false)
     msg =  "<li>"
     if (showSchedule)
     {
@@ -1248,7 +1249,7 @@ function updateReportTable(report, showSchedule)
     msg += "</div>"
     msg += "<div class=\"ui-block-b\" style=\"width:" + widthb + "\">"
     msg += "<div class=\"ui-bar\""
-    msg += ">" + secondsToDuration(total_duration, false) + "</div></div>"
+    msg += ">" + durationStr + "</div></div>"
     if (showSchedule)
     {
         msg += "<div class=\"ui-block-c\" style=\"width:" + widthc + "\">"
@@ -1262,7 +1263,8 @@ function updateReportTable(report, showSchedule)
     $('#reportTotalListView').listview('refresh');
     
     // write JSON 
-    var json = JSON.stringify(reportWithDurations, null, 4);
+    var reportWithTotal = {'Tasks': reportWithDurations, 'Total': durationStr}
+    var json = JSON.stringify(reportWithTotal, null, 4);
     $('#reportJSON').text(json);
     var blob = new Blob([json], {type: "application/json"});
     var url  = URL.createObjectURL(blob);
@@ -1270,7 +1272,7 @@ function updateReportTable(report, showSchedule)
     document.getElementById('downloadReportAsJSON').download = 'Timex_' + startDate + "_" + endDate + ".jsn";
     
     // write formatted text
-    reportAsText(reportWithDurations, secondsToDuration(total_duration, false));
+    reportAsText(reportWithDurations, durationStr);
 }
 
 function reportAsText(reportWithDurations, total_duration)
