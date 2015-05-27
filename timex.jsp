@@ -495,7 +495,7 @@
             You cannot see the data from another browser, nor can anyone else access your data.
             If accessing the page from another browser a new empty data store is created.
             See <i>Data Store</i> below for synchronising the contents of the data store with another instance.
-            The contents of the data store may be deleted if you wipe the browser's cache.
+            <b>The contents of the data store may be deleted if you wipe the browser's cache.</b>
         </p>
         <p>
             To view the current schedule in the planning system select "View Schedule" from the menu.
@@ -514,6 +514,8 @@
             Click "Clear All" to remove all projects from the list.
             Make sure to click "Save" to store the updated record, or "Cancel" to undo all changes.
         </p>
+        <p>
+            A project can be deleted from the day record by inserting "--:--" as the time value. Most browsers support this with the clear (x) button in the input field.
         <h3>Report</h3>
         <p>
             To create a report select "Create Report" in the menu and select a start date and end date. 
@@ -522,18 +524,19 @@
         </p>
         <p>
             To report actual hours worked on projects to the planning system, select "Report 515" from the menu.
-            Accept or edit the recorded time for each project against the suggested times 
-            and click "Submit 515" to update the planning database. 
+            Accept or edit the recorded time for each project against the suggested times and click "Submit 515" to update the planning database. 
             The reported hours are displayed in the column "Reported" of the 515 table.
             If a project is not named in the assigned schedule the reporting for this project will fail.
         </p>
         <h3>Data Store</h3>
         <p>
-            To synchronise the timex store with another instance the contents of the data store can be 
-            dumped to a JSON file.
-            When importing this JSON file into another instance the import data is inserted into the 
-            data store day by day.
-            Note that this overwrites existing days in the data store if the dates match.
+            The contents of the browser data store can be backed up to the planning database. Select "Synchronise" from the menu and click on "Store backup" to save a copy in the planning database and "Retrieve backup" to import the backup data back into your browser.
+        <p>
+            The contents of the data store may also be dumped to a JSON file.
+            When importing this JSON file into another browser instance the import data is inserted into the data store day by day.
+        </p>
+        <p>
+            Note that importing backup data overwrites existing days in the data store if the dates match.
         </p>
     </div>
     <div data-role="footer">
