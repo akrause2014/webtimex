@@ -368,7 +368,7 @@
                 <input type="text" disabled="" id="editAddProjectText" data-wrapper-class="controlgroup-textinput ui-btn"></input>
                 <input id="editAddProjectButton" data-inline="true" value="Add Project" type="button" disabled=""></input>
             </div>
-            <input id="editAddCurrentButton" value="Add Current Projects" type="button"></input>
+            <input id="editAddCurrentButton" value="Add Scheduled Projects" type="button"></input>
             <input id="editDeleteAllButton" value="Clear All" type="button"></input>
         </form>
     </div>

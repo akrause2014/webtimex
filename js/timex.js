@@ -22,15 +22,6 @@ function formatDate(date)
     return date.getFullYear() + '-' + pretty_time_string(date.getMonth()+1) + '-' + pretty_time_string(date.getDate())
 }
 
-function formatProjectName(projectName)
-{
-    // replaces all invalid characters by an underscore (_) 
-    // might be an issue if using project names that differ only in a special character
-    // TODO use seperate IDs for projects rather than some escaped name
-    // return projectName.replace(/[!\"#$%&'()*+,./:;<=>?@[\]^`{|}~ £]/g, '_');
-    return projects[projectName]['index'];
-}
-
 function durationToSeconds(s)
 {
     var parts = s.split(":");
@@ -652,20 +643,19 @@ $(document).bind('pagecreate', '#editProjects', function(evt)
         loadEditDate();
     });
     $(document).off('click', '#editAddCurrentButton').on('click', '#editAddCurrentButton', function(){
-        for (var projectName in projects)
-        {
-            if (!(projectName in editedProjects))
-            {
-                var newproject = {};
-                newproject['name'] = projectName;
-                newproject['duration'] = 0;
-                newproject['index'] = Object.keys(editedProjects).length;
-                editedProjects[projectName] = newproject;
-                msg = editAddRow(projectName, newproject['index'], 0);
-                $('#editListView').append(msg)
-                $('#editListView').listview('refresh');
-            }
-        }
+        var start = new Date($('#editDate').val());
+        // get the schedule for today
+        $.getJSON(webapp + "/RestServlet/Balance/:::Person-" + start.getTime() + "-5-1-1")
+            .fail(function(jqXHR, textStatus, errorThrown) {
+                console.log( "Error fetching schedule: " + textStatus + " " + errorThrown );
+                // if we can't fetch the schedule we add the current projects
+                addProjectsToEdited(projects);
+            })
+            .done(function(data){
+                var scheduledProjects = parseSchedule(data);
+                addProjectsToEdited(scheduledProjects);
+            });
+        
     });
     $(document).off('click', '#editDeleteAllButton').on('click', '#editDeleteAllButton', function(){
         $('#editListView').empty().append(createProjectListHeader());
@@ -674,10 +664,26 @@ $(document).bind('pagecreate', '#editProjects', function(evt)
         $('#editMessage').listview('refresh');
         editedProjects = {}
     });
-    // $(document).off('click', '#editListView li').on('click', '#editListView li', function(){
-    //     var selected = $(this).attr('data-name');
-    // });
 });
+
+function addProjectsToEdited(projs)
+{
+    for (var projectName in projs)
+    {
+        if (!(projectName in editedProjects))
+        {
+            // console.log('adding ' + projectName);
+            var newproject = {};
+            newproject['name'] = projectName;
+            newproject['duration'] = 0;
+            newproject['index'] = Object.keys(editedProjects).length;
+            editedProjects[projectName] = newproject;
+            var msg = editAddRow(projectName, newproject['index'], 0);
+            $('#editListView').append(msg)
+            $('#editListView').listview('refresh');
+        }
+    }
+}
 
 $(document).off('pagebeforeshow', '#update515').on('pagebeforeshow', '#update515', function(){
     
