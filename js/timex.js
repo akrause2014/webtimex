@@ -107,7 +107,8 @@ function readProjects()
     var transaction = db.transaction(["timex"], "readonly");
     var store = transaction.objectStore("timex");
     var index = store.index("date");
-    var request = index.openCursor(null, 'prev'); 
+    var keyUpperBound = IDBKeyRange.upperBound(date);
+    var request = index.openCursor(keyUpperBound, 'prev'); 
     request.onsuccess = function (event) {
         if (event.target.result) {
             lastDateRecord = event.target.result.value; //the object with max revision
@@ -122,7 +123,7 @@ function readProjects()
             return;
         }
         lastDate = lastDateRecord['date']
-        console.log('Last date record was ' + lastDate)
+        console.log('Last previous date record was ' + lastDate)
         projects = lastDateRecord['projects'];
         // if a new day started we create a new record
         if (date != lastDate)
@@ -452,6 +453,7 @@ function update515Table(report, schedule)
             if (requiresNarrative) msg += " * </b>";
             msg += '</td>';
             msg += '<td><textarea id="update515Comment' + i + '" ';
+            if (requiresNarrative) msg += "required ";
             msg += 'rows="4" wrap="soft" cols="64" class="input">';
             msg += projSched['Comment'];
             msg += '</textarea></td></tr>';
@@ -776,7 +778,7 @@ $(document).off('pagebeforeshow', '#update515').on('pagebeforeshow', '#update515
                             msg += failed[projectName]['message'];
                             msg += '\n';
                         }
-                        alert("Updates failed for tasks:\n" + msg);
+                        alert("Updates failed for tasks:\n\n" + msg);
                     }
                     else {
                         alert("Successfully submitted reports for all tasks");
