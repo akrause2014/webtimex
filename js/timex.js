@@ -378,7 +378,7 @@ function update515Table(report, schedule)
     report515 = {};
     var total_duration = 0;
     var reportWithDurations = {};
-    var msg = '<tr><th>Project</th>';
+    var msg = '<tr><th>Task</th>';
     msg += '<th style="text-align:right;">Minimum</th>';
     msg += '<th style="text-align:right;">Suggested</th>';
     msg += '<th style="text-align:right;">Reported</th>';
@@ -387,6 +387,7 @@ function update515Table(report, schedule)
     if(typeof $('#update515Table').table() !== "undefined")
         $('#update515Table').table('refresh');
     $('#update515Table tbody').empty();
+    $('#update515Comments tbody').empty();
     var suggestedTotal = 0;
     var reportedTotal = 0;
     var i = 0;
@@ -437,10 +438,29 @@ function update515Table(report, schedule)
         }
         msg += '"></input></td>';
         msg += '</tr>';
-        if (projectName != "Leave") report515[projectName] = i;
-        i++;
         $('#update515Table tbody').append(msg);
         $('#update515Table').table('refresh');
+        
+        // now add the comments
+        if (projectName in schedule && projectName != "Leave") {
+            msg = "<tr><td>";
+            var comment = projSched['Comment'];
+            if (comment === undefined || comment === null) comment = "";
+            var requiresNarrative = projSched['CommentRequired'];
+            if (requiresNarrative) msg += "<b>";
+            msg += projectName;
+            if (requiresNarrative) msg += " * </b>";
+            msg += '</td>';
+            msg += '<td><textarea id="update515Comment' + i + '" ';
+            msg += 'rows="4" wrap="soft" cols="64" class="input">';
+            msg += projSched['Comment'];
+            msg += '</textarea></td></tr>';
+            $('#update515Comments tbody').append(msg);
+            $('#update515Comments').table('refresh');
+        }
+        
+        if (projectName != "Leave") report515[projectName] = i;
+        i++;
     }
     msg = '<tr><th>Total</th><td></td>';
     msg += '<td style="text-align:right;">' + suggestedTotal + '</td>';
@@ -720,16 +740,22 @@ $(document).off('pagebeforeshow', '#update515').on('pagebeforeshow', '#update515
         data['tasks'] = tasks;
         for (projectName in report515)
         {
+            tasks[projectName] = {}
             var hours = parseFloat($('#update515Project' + report515[projectName]).val());
             if (!(isNaN(hours))) {
-                tasks[projectName] = hours.toFixed(1);
+                tasks[projectName]["hours"] = hours.toFixed(1);
             }
+            else {
+                tasks[projectName]["hours"] = 0;
+            }
+            var comment = $('#update515Comment' + report515[projectName]).val()
+            tasks[projectName]["comment"] = comment;
         }
         console.log('Updating 515 for ' + date);
         var msg = '';
         for (var projectName in tasks)
         {
-            msg += projectName + ': ' + tasks[projectName] + '\n';
+            msg += projectName + ': ' + tasks[projectName]['hours'] + '\n';
         }
         var r = confirm("Update 515?\n\n" + msg);
         if (r == true) 
@@ -746,9 +772,14 @@ $(document).off('pagebeforeshow', '#update515').on('pagebeforeshow', '#update515
                         var msg = '';
                         for (var projectName in failed)
                         {
-                            msg += '- ' + projectName + '\n';
+                            msg += '- ' + projectName + ': ';
+                            msg += failed[projectName]['message'];
+                            msg += '\n';
                         }
                         alert("Updates failed for tasks:\n" + msg);
+                    }
+                    else {
+                        alert("Successfully submitted reports for all tasks");
                     }
                     fetchScheduleFor515();
                 },

@@ -224,6 +224,8 @@
             <div class="ui-block-b"><a id="update515NextMonthButton" class="ui-btn ui-icon-carat-r ui-btn-icon-right ui-corner-all" type="button">Next</a></div>
         </div>
         
+        <h2>Reported Hours</h2>
+        
         <table data-role="table" id="update515Table" data-mode="reflow" data-inset class="ui-responsive project-table">
             <thead>
                 <tr>
@@ -231,6 +233,23 @@
                     <th>Actual</th>
                     <th>Minimum</th>
                     <th>Suggested</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+
+        <table data-role="table" id="update515Table" data-mode="reflow" data-inset class="ui-responsive project-table">
+            
+            <h2>Comments</h2>
+            <p>
+                Comments for tasks are optional unless shown in bold and marked with *. Mandatory comments usually indicate an external reporting requirement so make sure text you enter is suitable for external consumption.
+            </p>
+        <table data-role="table" id="update515Comments" data-mode="reflow" data-inset class="ui-responsive project-table">
+            <thead>
+                <tr>
+                    <th>Task name</th>
+                    <th>Comment</th>
                 </tr>
             </thead>
             <tbody>
