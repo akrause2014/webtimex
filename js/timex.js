@@ -840,6 +840,12 @@ $(document).bind('pagecreate', '#tracker', function(evt)
     }
     
     $(document).off('click', '#listview li').on('click', '#listview li', function(){
+        if ($(this).attr('data-name') === undefined)
+        {
+            // list header or some other undefined line in the project list
+            // we're ignoring this
+            return;
+        }
         prev = activeProject;
         if (prev != null)
         {
