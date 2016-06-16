@@ -518,7 +518,7 @@ function viewSchedule()
             var totalRow = '';
             $('#scheduleTable thead').empty();
             $('#scheduleTable tbody').empty();
-            $('#importProjectsButton').button('enable');
+            $('#importProjectsButton').closest('.ui-btn').show();
             var columns;
             $.each( jsonSchedule, function( key, projSched ) {
                 var isHeader = (key == "Task");
@@ -571,11 +571,24 @@ function viewSchedule()
             $('#scheduleTable').table('refresh');
         })
         .fail(function(jqXHR, textStatus, errorThrown) {
+            var errorMessage = "";
+            if (jqXHR.readyState == 4) {
+                if (jqXHR.status == 404) {
+                    errorMessage = "Not found. Your login may have expired."
+                }
+                else {
+                    errorMessage = "HTTP status " + textStatus + ", error " + errorThrown;
+                }
+            }
+            else if (jqXHR.readyState == 0) {
+                console.log('Connection error');
+                errorMessage = "Network error. The planning server may be down.";
+            }
             console.log( "Error fetching schedule : " + textStatus + " " + errorThrown );
             $('#scheduleTable tbody').empty();
             $('#scheduleTable thead').empty();
-            $('#scheduleTable thead').append('<tr><th>Failed to load schedule.</th></tr>');
-            $('#importProjectsButton').button('disable');
+            $('#scheduleTable thead').append('<tr><th>Failed to load schedule: ' + errorMessage + '</th></tr>');
+            $('#importProjectsButton').closest('.ui-btn').hide();
           });
 }
 
@@ -816,6 +829,20 @@ $(document).off('pagebeforeshow', '#database').on('pagebeforeshow', '#database',
         $('#latestBackupTimestamp').text('Latest Backup: ' + timestamp);
     })
     .fail(function(jqXHR, textStatus, errorThrown) {
+        var errorMessage = "";
+        if (jqXHR.readyState == 4) {
+            if (jqXHR.status == 404) {
+                errorMessage = "Not found. Your login may have expired. Please check your EASE login."
+            }
+            else {
+                errorMessage = "HTTP status " + textStatus + ", error " + errorThrown;
+            }
+        }
+        else if (jqXHR.readyState == 0) {
+            console.log('Connection error');
+            errorMessage = "Network error. The planning server may be down. Please check with the service provider.";
+        }
+        $('#latestBackupTimestamp').text("Latest Backup: " + errorMessage);
         console.log( "Error retrieving backup timestamp: " + textStatus + " " + errorThrown );
     });
 });
@@ -1651,8 +1678,21 @@ function writeToBackup(data)
     data['Timestamp'] = timestamp.toISOString();
     $.post(webapp + "/StashServlet?timestamp=" + timestamp.getTime(), JSON.stringify(data))
     .fail(function(jqXHR, textStatus, errorThrown) {
+        var errorMessage = "";
+        if (jqXHR.readyState == 4) {
+            if (jqXHR.status == 404) {
+                errorMessage = "Not found. Your login may have expired.\nPlease check your EASE login."
+            }
+            else {
+                errorMessage = "HTTP status " + textStatus + ", error " + errorThrown;
+            }
+        }
+        else if (jqXHR.readyState == 0) {
+            console.log('Connection error');
+            errorMessage = "Network error. The planning server may be down.\nPlease check with the service provider.";
+        }
         console.log( "Error storing backup: " + textStatus + " " + errorThrown );
-        $('#latestBackupTimestamp').text('Failed to store backup. Please check with the service provider.');
+        $('#latestBackupTimestamp').text('Failed to store backup: ' + errorMessage);
     })
     .done(function(response){
         console.log('Successfully stored backup with timestamp ' + response);
@@ -1664,8 +1704,21 @@ function importFromBackup()
 {
     $.getJSON(webapp + "/StashServlet")
     .fail(function(jqXHR, textStatus, errorThrown) {
+        var errorMessage = "";
+        if (jqXHR.readyState == 4) {
+            if (jqXHR.status == 404) {
+                errorMessage = "Not found. Your login may have expired.\nPlease check your EASE login."
+            }
+            else {
+                errorMessage = "HTTP status " + textStatus + ", error " + errorThrown;
+            }
+        }
+        else if (jqXHR.readyState == 0) {
+            console.log('Connection error');
+            errorMessage = "Network error. The planning server may be down.\nPlease check with the service provider.";
+        }
         console.log( "Error retrieving backup: " + textStatus + " " + errorThrown );
-        alert('Failed to retrieve backup. Please check with the service provider.');
+        $('#latestBackupTimestamp').text('Failed to retrieve backup: ' + errorMessage);
       })
     .done(function(data){
         var timestamp = data['Timestamp'];
